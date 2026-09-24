@@ -37,8 +37,10 @@ services:
       target: nginx-stage
     container_name: law-and-justice-web
     restart: unless-stopped
+    expose:
+      - "80"
     ports:
-      - "8080:80"
+      - "8082:80"
     networks:
       - dokploy-network
     depends_on:
