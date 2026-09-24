@@ -1,0 +1,6 @@
+{
+  "name": "Droit & Justice",
+  "description": "Plateforme institutionnelle de l'association Droit & Justice dédiée à la promotion du droit, au renforcement de la justice et à l'État de droit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
