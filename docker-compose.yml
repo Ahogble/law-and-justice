@@ -1,0 +1,52 @@
+services:
+  law-and-justice-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: php-stage
+    container_name: law-and-justice-app
+    restart: unless-stopped
+    environment:
+      APP_NAME: "${APP_NAME:-Droit & Justice}"
+      APP_ENV: production
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      APP_URL: "${APP_URL:-https://droit-justice.asso.fr}"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: pgsql
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT:-5432}"
+      DB_DATABASE: "${DB_DATABASE}"
+      DB_USERNAME: "${DB_USERNAME}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      LOG_CHANNEL: stderr
+      FORCE_HTTPS: "true"
+    labels:
+      - "traefik.enable=false"
+    networks:
+      dokploy-network:
+        aliases:
+          - php-app
+
+  law-and-justice-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx-stage
+    container_name: law-and-justice-web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - dokploy-network
+    depends_on:
+      - law-and-justice-app
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  law-and-justice-storage:
