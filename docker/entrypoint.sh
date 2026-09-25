@@ -10,20 +10,10 @@ php artisan package:discover --ansi
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Clear cache (non-fatal: DB might not be ready yet)
-php artisan cache:clear || true
-
 # Wait for database to be ready (if DB_HOST is set)
 if [ -n "$DB_HOST" ]; then
   echo "Waiting for database at $DB_HOST..."
-  COUNT=0
   until php artisan db:show > /dev/null 2>&1; do
-    COUNT=$((COUNT+1))
-    if [ $((COUNT % 5)) -eq 0 ]; then
-      echo "--- Database Connection Error Detail ---"
-      php artisan db:show || true
-      echo "----------------------------------------"
-    fi
     echo "  Database not ready ($DB_HOST:${DB_PORT:-5432}), retrying in 2s..."
     sleep 2
   done
@@ -34,6 +24,7 @@ fi
 php artisan migrate --force --seed
 
 # Cache config, routes and views
+php artisan cache:clear || true
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
