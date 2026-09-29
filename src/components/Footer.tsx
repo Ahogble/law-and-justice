@@ -82,14 +82,6 @@ export const Footer: React.FC<FooterProps> = ({
                 {t('footer.links.privacy')}
               </button>
             </li>
-            <li className="pt-2 border-t border-[#1A2B48]">
-              <a
-                href="/login"
-                className="text-[#C5A059] font-medium hover:underline transition-colors text-left flex items-center gap-1.5 text-xs"
-              >
-                <span>{t('nav.admin')}</span>
-              </a>
-            </li>
           </ul>
         </div>
 
@@ -178,13 +170,25 @@ export const Footer: React.FC<FooterProps> = ({
       </div>
 
       {/* Bottom Sub-Footer */}
-      <div className="border-t border-[#1A2B48] pt-8 px-5 md:px-16 max-w-[1280px] mx-auto text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="border-t border-[#1A2B48] pt-8 px-5 md:px-16 max-w-[1280px] mx-auto text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4 relative">
         <p className="text-[13px] text-[#8293b5]">
           © 2024 Droit &amp; Justice. Tous droits réservés. Institution de permanence et d'excellence.
         </p>
-        <p className="text-[12px] text-[#8293b5]/80">
-          Siège social : 12 rue Royale, 75008 Paris
-        </p>
+
+        <div className="flex flex-col md:items-end gap-1">
+          {/* Discreet hidden admin link in the exact encircled area */}
+          <a
+            href="/login"
+            title="Espace Administrateur"
+            className="text-[11px] text-transparent hover:text-[#C5A059] transition-colors duration-300 cursor-pointer select-none self-end"
+          >
+            • Accès Back-Office
+          </a>
+          
+          <p className="text-[12px] text-[#8293b5]/80">
+            Siège social : 12 rue Royale, 75008 Paris
+          </p>
+        </div>
       </div>
     </footer>
   );

@@ -19,8 +19,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Create Admin User
+        User::where('email', 'admin@droit-justice.asso.fr')->update(['email' => '693937000']);
+
         User::updateOrCreate(
-            ['email' => 'admin@droit-justice.asso.fr'],
+            ['email' => '693937000'],
             [
                 'name' => 'Administrateur Droit & Justice',
                 'password' => Hash::make('Admin2026!'),
