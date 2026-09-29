@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('author_role')->nullable();
             $table->string('published_at')->nullable();
             $table->string('read_time')->default('5 min');
-            $table->string('image_url')->nullable();
+            $table->longText('image_url')->nullable();
             $table->json('tags')->nullable();
             $table->string('pdf_url')->nullable();
             $table->timestamps();
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('category')->default('Conseil d\'Administration');
             $table->string('subcategory')->nullable();
             $table->text('bio')->nullable();
-            $table->string('avatar_url')->nullable();
+            $table->longText('avatar_url')->nullable();
             $table->json('specialties')->nullable();
             $table->integer('publication_count')->default(0);
             $table->string('email')->nullable();

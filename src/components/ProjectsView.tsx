@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Scale, 
   ShieldCheck, 
@@ -19,7 +19,9 @@ import {
   UserCheck, 
   Building2,
   Clock,
-  Briefcase
+  Briefcase,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { DisputeCategory, DisputeStage, DisputeOfficer, DisputeCase, DisputeStageConfig } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -113,6 +115,18 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   // Secondary sub-tab for Litiges Internes
   const [activeStage, setActiveStage] = useState<string>(internalStages[0]?.key || 'conciliation');
 
+  // Ref & scroll function for stages carousel
+  const stagesScrollRef = useRef<HTMLDivElement>(null);
+  const scrollStages = (direction: 'left' | 'right') => {
+    if (stagesScrollRef.current) {
+      const scrollAmount = stagesScrollRef.current.clientWidth;
+      stagesScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // Filters for Cases
   const [caseFilter, setCaseFilter] = useState<'all' | 'public' | 'confidential'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -167,38 +181,66 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     resolutionTimeframe: c.resolutionTimeframe || c.resolution_timeframe
   }));
 
+  // Normalize category & stage keys
+  const normalizeKey = (str: string = '') => {
+    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  };
+
+  const normalizeStageKey = (stageStr: string = '') => {
+    const s = normalizeKey(stageStr);
+    if (s.includes('conciliat') || s.includes('1')) return 'conciliation';
+    if (s.includes('mediat') || s.includes('2')) return 'mediation';
+    if (s.includes('arbitr') || s.includes('3')) return 'arbitrage';
+    return s;
+  };
+
   // Filter officers based on current view
   const currentOfficers = normalizedOfficers.filter((off) => {
-    if (activeCategory === 'externe') {
-      return off.category === 'externe';
+    const offCategory = normalizeKey(off.category);
+    if (normalizeKey(activeCategory) === 'externe') {
+      return offCategory === 'externe';
     }
-    return off.category === 'interne' && off.stage === activeStage;
+    return offCategory === 'interne' && (activeStage === 'all' || normalizeStageKey(off.stage) === normalizeStageKey(activeStage));
   });
 
   // Filter cases based on current view
   const currentCases = normalizedCases.filter((c) => {
-    const matchesCategory = c.category === activeCategory;
-    const matchesStage = activeCategory === 'externe' ? true : c.stage === activeStage;
+    const matchesCategory = normalizeKey(c.category) === normalizeKey(activeCategory);
+
+    // If searching, match across all stages; otherwise match selected stage unless 'all' is selected
+    const isSearching = searchQuery.trim().length > 0;
+    const matchesStage = (activeCategory === 'externe' || activeStage === 'all' || isSearching) 
+      ? true 
+      : normalizeStageKey(c.stage) === normalizeStageKey(activeStage);
 
     let matchesVisibility = true;
     if (caseFilter === 'public') matchesVisibility = c.isPublic;
     if (caseFilter === 'confidential') matchesVisibility = !c.isPublic;
 
     let matchesSearch = true;
-    if (searchQuery.trim()) {
+    if (isSearching) {
       const q = searchQuery.toLowerCase();
       matchesSearch = 
-        c.title.toLowerCase().includes(q) ||
-        c.caseNumber.toLowerCase().includes(q) ||
-        (c.parties && c.parties.toLowerCase().includes(q)) ||
-        c.summary.toLowerCase().includes(q);
+        (c.title || '').toLowerCase().includes(q) ||
+        (c.caseNumber || '').toLowerCase().includes(q) ||
+        (c.parties || '').toLowerCase().includes(q) ||
+        (c.summary || '').toLowerCase().includes(q) ||
+        (c.assignedOfficer || '').toLowerCase().includes(q);
     }
 
     return matchesCategory && matchesStage && matchesVisibility && matchesSearch;
   });
 
+  // Helper count for stage tabs
+  const getStageCaseCount = (stgKey: string) => {
+    return normalizedCases.filter(c => 
+      normalizeKey(c.category) === 'interne' && 
+      normalizeStageKey(c.stage) === normalizeStageKey(stgKey)
+    ).length;
+  };
+
   // Stage stage texts
-  const currentStageObj = internalStages.find(s => s.key === activeStage) || internalStages[0];
+  const currentStageObj = internalStages.find(s => normalizeStageKey(s.key) === normalizeStageKey(activeStage)) || internalStages[0];
 
   const currentStageText = activeCategory === 'interne' 
     ? {
@@ -320,37 +362,100 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         {/* LITIGES INTERNES STAGES SUB-NAV (Conciliation / Médiation / Arbitrage) */}
         {/* ------------------------------------------------------------- */}
         {activeCategory === 'interne' && (
-          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
-              <span>{isEn ? 'Phases of Internal Dispute Resolution:' : 'Étapes du Règlement des Litiges Internes :'}</span>
-            </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative group">
+            <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
+                <span>{isEn ? 'Phases of Internal Dispute Resolution:' : 'Étapes du Règlement des Litiges Internes :'}</span>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {internalStages.map((stg, idx) => (
+              <div className="flex items-center gap-2">
                 <button
-                  key={stg.id || stg.key || idx}
-                  onClick={() => setActiveStage(stg.key)}
-                  className={`p-4 rounded-xl text-left border transition-all cursor-pointer relative overflow-hidden ${
-                    activeStage === stg.key
-                      ? 'bg-gradient-to-br from-[#031632] to-[#0b2447] text-white border-[#031632] shadow-md'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                  onClick={() => setActiveStage('all')}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeStage === 'all'
+                      ? 'bg-[#031632] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                      activeStage === stg.key ? 'bg-[#C5A059]/20 text-[#C5A059]' : 'bg-slate-200 text-slate-600'
-                    }`}>
-                      {stg.stepNumber || `Étape ${idx + 1}`}
-                    </span>
-                    <Handshake className={`w-5 h-5 ${activeStage === stg.key ? 'text-[#C5A059]' : 'text-slate-400'}`} />
-                  </div>
-                  <h3 className="font-playfair font-bold text-lg leading-snug">{stg.title ? stg.title.replace(/^Étape \d+\s*:\s*/i, '') : stg.key}</h3>
-                  <p className={`text-xs mt-1 ${activeStage === stg.key ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {stg.subtitle}
-                  </p>
+                  <span>{isEn ? 'All Stages' : 'Toutes les étapes'}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                    activeStage === 'all' ? 'bg-[#C5A059] text-[#031632]' : 'bg-slate-200 text-slate-700'
+                  }`}>
+                    {normalizedCases.filter(c => normalizeKey(c.category) === 'interne').length}
+                  </span>
                 </button>
-              ))}
+
+                {internalStages.length > 3 && (
+                  <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+                    <button
+                      onClick={() => scrollStages('left')}
+                      className="p-1.5 bg-slate-100 hover:bg-[#031632] hover:text-white rounded-lg transition-colors cursor-pointer text-slate-600 border border-slate-200"
+                      title="Étape précédente"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => scrollStages('right')}
+                      className="p-1.5 bg-slate-100 hover:bg-[#031632] hover:text-white rounded-lg transition-colors cursor-pointer text-slate-600 border border-slate-200"
+                      title="Étape suivante"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stages carousel container - displays exactly 3 cards at a time on desktop */}
+            <div
+              ref={stagesScrollRef}
+              className="flex items-stretch gap-3 overflow-x-auto pb-2 pt-1 scroll-smooth snap-x snap-mandatory scrollbar-none"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {internalStages.map((stg, idx) => {
+                const isSelected = activeStage === stg.key || normalizeStageKey(activeStage) === normalizeStageKey(stg.key);
+                const count = getStageCaseCount(stg.key);
+
+                return (
+                  <button
+                    key={stg.id || stg.key || idx}
+                    onClick={() => setActiveStage(stg.key)}
+                    className={`p-4 rounded-xl text-left border transition-all cursor-pointer relative overflow-hidden shrink-0 snap-start w-full sm:w-[calc((100%-0.75rem)/2)] md:w-[calc((100%-1.5rem)/3)] flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-[#031632] to-[#0b2447] text-white border-[#031632] shadow-md'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                          isSelected ? 'bg-[#C5A059]/20 text-[#C5A059]' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {stg.stepNumber || `Étape ${idx + 1}`}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            isSelected 
+                              ? 'bg-[#C5A059] text-[#031632]' 
+                              : count > 0 
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300' 
+                                : 'bg-slate-200 text-slate-500'
+                          }`}>
+                            {count} {count > 1 ? 'dossiers' : 'dossier'}
+                          </span>
+                          <Handshake className={`w-4 h-4 ${isSelected ? 'text-[#C5A059]' : 'text-slate-400'}`} />
+                        </div>
+                      </div>
+                      <h3 className="font-playfair font-bold text-lg leading-snug line-clamp-2">{stg.title ? stg.title.replace(/^Étape \d+\s*:\s*/i, '') : stg.key}</h3>
+                      <p className={`text-xs mt-1 line-clamp-2 ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                        {stg.subtitle}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

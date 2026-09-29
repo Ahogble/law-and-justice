@@ -21,7 +21,7 @@ return new class extends Migration
             $table->json('specialties')->nullable();
             $table->integer('experience_years')->default(10);
             $table->integer('cases_handled')->default(0);
-            $table->string('avatar_url')->nullable();
+            $table->longText('avatar_url')->nullable();
             $table->string('email')->nullable();
             $table->string('availability')->default('Disponible');
             $table->timestamps();

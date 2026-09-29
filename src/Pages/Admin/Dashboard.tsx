@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
   Shield,
@@ -33,7 +33,10 @@ import {
   UserPlus,
   SlidersHorizontal,
   Mail,
-  Award
+  Award,
+  X,
+  Upload,
+  AlertTriangle
 } from 'lucide-react';
 import { MemberCategory, MemberSubcategory } from '../../types';
 
@@ -128,6 +131,102 @@ export default function Dashboard({
   const [officerAvailabilityFilter, setOfficerAvailabilityFilter] = useState('all');
   const [officerSortBy, setOfficerSortBy] = useState('name-asc');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Cases Search, Filter & Sorting state
+  const [caseSearchQuery, setCaseSearchQuery] = useState('');
+  const [caseCategoryFilter, setCaseCategoryFilter] = useState('all');
+  const [caseStageFilter, setCaseStageFilter] = useState('all');
+  const [caseStatusFilter, setCaseStatusFilter] = useState('all');
+  const [caseSortBy, setCaseSortBy] = useState('date-desc');
+
+  const officerAvatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleOfficerAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert("La taille du fichier ne doit pas dépasser 10 Mo.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 600;
+          const MAX_HEIGHT = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setDisputeOfficerForm(prev => ({
+            ...prev,
+            avatar_url: dataUrl
+          }));
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Custom Confirmation Dialog State (SweetAlert style)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Oui, supprimer',
+    cancelText: 'Annuler',
+    onConfirm: () => {},
+  });
+
+  const requestConfirmation = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmText = 'Oui, supprimer',
+    cancelText = 'Annuler'
+  ) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      cancelText,
+      onConfirm,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const handleExecuteConfirm = () => {
+    confirmModal.onConfirm();
+    closeConfirmModal();
+  };
 
   const initialCategories: MemberCategory[] = (memberCategories && memberCategories.length > 0)
     ? memberCategories
@@ -227,10 +326,14 @@ export default function Dashboard({
   };
 
   const handleDeleteCategory = (catId: string) => {
-    if (confirm('Voulez-vous supprimer cette catégorie et ses sous-catégories ?')) {
-      const updated = categoriesList.filter(c => c.id !== catId);
-      saveCategoryStructure(updated);
-    }
+    requestConfirmation(
+      'Supprimer la catégorie',
+      'Voulez-vous vraiment supprimer cette catégorie et l\'ensemble de ses sous-catégories ?',
+      () => {
+        const updated = categoriesList.filter(c => c.id !== catId);
+        saveCategoryStructure(updated);
+      }
+    );
   };
 
   const handleAddSubcategory = (catId: string, e: React.FormEvent) => {
@@ -258,18 +361,22 @@ export default function Dashboard({
   };
 
   const handleDeleteSubcategory = (catId: string, subId: string) => {
-    if (confirm('Supprimer cette sous-catégorie ?')) {
-      const updated = categoriesList.map(cat => {
-        if (cat.id === catId) {
-          return {
-            ...cat,
-            subcategories: cat.subcategories.filter(s => s.id !== subId)
-          };
-        }
-        return cat;
-      });
-      saveCategoryStructure(updated);
-    }
+    requestConfirmation(
+      'Supprimer la sous-catégorie',
+      'Voulez-vous vraiment supprimer cette sous-catégorie ?',
+      () => {
+        const updated = categoriesList.map(cat => {
+          if (cat.id === catId) {
+            return {
+              ...cat,
+              subcategories: cat.subcategories.filter(s => s.id !== subId)
+            };
+          }
+          return cat;
+        });
+        saveCategoryStructure(updated);
+      }
+    );
   };
 
   const handleLogout = () => {
@@ -288,9 +395,13 @@ export default function Dashboard({
   };
 
   const handleDeleteArticle = (id: string) => {
-    if (confirm('Voulez-vous vraiment supprimer cet article ?')) {
-      router.delete(`/admin/articles/${id}`);
-    }
+    requestConfirmation(
+      'Supprimer cet article',
+      'Êtes-vous sûr de vouloir supprimer définitivement cet article de la publication ?',
+      () => {
+        router.delete(`/admin/articles/${id}`);
+      }
+    );
   };
 
   // --- Member submit ---
@@ -305,9 +416,13 @@ export default function Dashboard({
   };
 
   const handleDeleteMember = (id: string) => {
-    if (confirm('Supprimer ce membre ?')) {
-      router.delete(`/admin/members/${id}`);
-    }
+    requestConfirmation(
+      'Supprimer ce membre',
+      'Voulez-vous vraiment retirer ce membre de l\'annuaire ?',
+      () => {
+        router.delete(`/admin/members/${id}`);
+      }
+    );
   };
 
   // --- Project submit ---
@@ -322,9 +437,13 @@ export default function Dashboard({
   };
 
   const handleDeleteProject = (id: string) => {
-    if (confirm('Supprimer ce projet ?')) {
-      router.delete(`/admin/projects/${id}`);
-    }
+    requestConfirmation(
+      'Supprimer ce projet',
+      'Voulez-vous vraiment supprimer ce projet ?',
+      () => {
+        router.delete(`/admin/projects/${id}`);
+      }
+    );
   };
 
   // --- Activity submit ---
@@ -339,9 +458,13 @@ export default function Dashboard({
   };
 
   const handleDeleteActivity = (id: string) => {
-    if (confirm('Supprimer cette activité ?')) {
-      router.delete(`/admin/activities/${id}`);
-    }
+    requestConfirmation(
+      'Supprimer cette activité',
+      'Voulez-vous vraiment supprimer cette activité de l\'agenda ?',
+      () => {
+        router.delete(`/admin/activities/${id}`);
+      }
+    );
   };
 
   // --- Legal Text submit ---
@@ -356,9 +479,13 @@ export default function Dashboard({
   };
 
   const handleDeleteLegalText = (id: string) => {
-    if (confirm('Supprimer ce texte juridique ?')) {
-      router.delete(`/admin/legal-texts/${id}`);
-    }
+    requestConfirmation(
+      'Supprimer le texte juridique',
+      'Voulez-vous vraiment supprimer ce texte juridique ?',
+      () => {
+        router.delete(`/admin/legal-texts/${id}`);
+      }
+    );
   };
 
   // --- Dispute Officers submit ---
@@ -387,10 +514,14 @@ export default function Dashboard({
     });
   };
 
-  const handleDeleteDisputeOfficer = (id: string) => {
-    if (confirm('Supprimer cet officiel de litige ?')) {
-      router.delete(`/admin/dispute-officers/${id}`);
-    }
+  const handleDeleteDisputeOfficer = (id: string, name?: string) => {
+    requestConfirmation(
+      'Supprimer l\'intervenant',
+      `Voulez-vous vraiment supprimer ${name ? `l'officiel "${name}"` : 'cet officiel de litige'} du répertoire ? Cette action est irréversible.`,
+      () => {
+        router.delete(`/admin/dispute-officers/${id}`);
+      }
+    );
   };
 
   // --- Dispute Cases submit ---
@@ -418,10 +549,14 @@ export default function Dashboard({
     });
   };
 
-  const handleDeleteDisputeCase = (id: string) => {
-    if (confirm('Supprimer cette affaire de litige ?')) {
-      router.delete(`/admin/dispute-cases/${id}`);
-    }
+  const handleDeleteDisputeCase = (id: string, nameOrCode?: string) => {
+    requestConfirmation(
+      'Supprimer cette affaire',
+      `Voulez-vous vraiment supprimer ${nameOrCode ? `l'affaire "${nameOrCode}"` : 'cette affaire de litige'} ? Cette action est irréversible.`,
+      () => {
+        router.delete(`/admin/dispute-cases/${id}`);
+      }
+    );
   };
 
   // --- Dispute Stages submit ---
@@ -1568,158 +1703,217 @@ export default function Dashboard({
                       </div>
                     </div>
 
-                    {/* Registration / Editing Form */}
-                    {isEditing ? (
-                      <form onSubmit={handleSaveDisputeOfficer} className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-amber-300/80 mb-6 shadow-md">
-                        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                          <h3 className="font-semibold text-amber-800 text-sm flex items-center gap-2">
-                            <UserPlus className="w-4 h-4 text-amber-600" />
-                            <span>{disputeOfficerForm.id ? 'Modifier l\'officiel' : 'Enregistrer un Conciliateur / Médiateur / Arbitre'}</span>
-                          </h3>
-                          <span className="text-[11px] text-slate-500">Formulaire complet (Conforme Image 2)</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Nom complet (ex: Me Gabriel Leroy)</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="ex: Me Gabriel Leroy"
-                              value={disputeOfficerForm.name}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, name: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-amber-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Intitulé du Titre / Badge Status (ex: CONCILIATEUR SENIOR)</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="ex: CONCILIATEUR SENIOR"
-                              value={disputeOfficerForm.title}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, title: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-amber-500"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Fonction Principale</label>
-                            <select
-                              value={disputeOfficerForm.role}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, role: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-amber-500"
+                    {/* Registration / Editing Form Modal */}
+                    {isEditing && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+                        <div className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto transform transition-all">
+                          {/* Modal Header */}
+                          <div className="px-8 py-6 bg-gradient-to-r from-amber-500/10 via-slate-50 to-white border-b border-slate-200/90 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0">
+                                <UserPlus className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h3 className="font-serif font-bold text-slate-900 text-lg md:text-xl flex items-center gap-2">
+                                  <span>{disputeOfficerForm.id ? 'Modifier l\'intervenant' : 'Enregistrer un Conciliateur / Médiateur / Arbitre'}</span>
+                                </h3>
+                                <p className="text-xs md:text-sm text-slate-500 mt-0.5">Renseignez les détails complets du profil de l'officiel neutre</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsEditing(false)}
+                              className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-2xl transition-colors cursor-pointer"
+                              title="Fermer"
                             >
-                              <option value="Conciliateur">Conciliateur</option>
-                              <option value="Médiateur">Médiateur</option>
-                              <option value="Arbitre">Arbitre</option>
-                            </select>
+                              <X className="w-6 h-6" />
+                            </button>
                           </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Étape Procédurale</label>
-                            <select
-                              value={disputeOfficerForm.stage}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, stage: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-amber-500"
-                            >
-                              {stagesList.map((s, idx) => (
-                                <option key={s.id || s.key || idx} value={s.key}>
-                                  {s.stepNumber ? `${s.stepNumber} : ` : ''}{s.title ? s.title.replace(/^Étape \d+\s*:\s*/i, '') : s.key}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Statut Disponibilité</label>
-                            <select
-                              value={disputeOfficerForm.availability}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, availability: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-emerald-700 font-semibold focus:outline-none focus:border-amber-500"
-                            >
-                              <option value="Disponible">Disponible</option>
-                              <option value="Sur RDV">Sur RDV</option>
-                              <option value="En audience">En audience</option>
-                              <option value="En mission">En mission</option>
-                              <option value="Indisponible">Indisponible</option>
-                            </select>
-                          </div>
-                        </div>
 
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Description du Rôle / Barreau / Mandat (ex: Avocat au Barreau de Paris & Membre de la Commission d'Éthique)</label>
-                          <input
-                            type="text"
-                            placeholder="ex: Avocat au Barreau de Paris & Membre de la Commission d'Éthique"
-                            value={disputeOfficerForm.role}
-                            onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, role: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
+                          {/* Form Body */}
+                          <form onSubmit={handleSaveDisputeOfficer}>
+                            <div className="p-8 space-y-6 max-h-[78vh] overflow-y-auto">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nom complet (ex: Me Gabriel Leroy)</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    placeholder="ex: Me Gabriel Leroy"
+                                    value={disputeOfficerForm.name}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, name: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Intitulé du Titre / Badge Status (ex: CONCILIATEUR SENIOR)</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    placeholder="ex: CONCILIATEUR SENIOR"
+                                    value={disputeOfficerForm.title}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, title: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                              </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Expérience (années de pratique)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={disputeOfficerForm.experience_years}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, experience_years: parseInt(e.target.value) || 0 })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Dossiers traités (nombre d'affaires)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={disputeOfficerForm.cases_handled}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, cases_handled: parseInt(e.target.value) || 0 })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                            />
-                          </div>
-                          <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Email professionnel</label>
-                            <input
-                              type="email"
-                              placeholder="ex: g.leroy@droit-justice.asso.fr"
-                              value={disputeOfficerForm.email}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, email: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                            />
-                          </div>
-                        </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Fonction Principale</label>
+                                  <select
+                                    value={disputeOfficerForm.role}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, role: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                  >
+                                    <option value="Conciliateur">Conciliateur</option>
+                                    <option value="Médiateur">Médiateur</option>
+                                    <option value="Arbitre">Arbitre</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Étape Procédurale</label>
+                                  <select
+                                    value={disputeOfficerForm.stage}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, stage: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                  >
+                                    {stagesList.map((s, idx) => (
+                                      <option key={s.id || s.key || idx} value={s.key}>
+                                        {s.stepNumber ? `${s.stepNumber} : ` : ''}{s.title ? s.title.replace(/^Étape \d+\s*:\s*/i, '') : s.key}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Statut Disponibilité</label>
+                                  <select
+                                    value={disputeOfficerForm.availability}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, availability: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-emerald-700 font-bold focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                  >
+                                    <option value="Disponible">Disponible</option>
+                                    <option value="Sur RDV">Sur RDV</option>
+                                    <option value="En audience">En audience</option>
+                                    <option value="En mission">En mission</option>
+                                    <option value="Indisponible">Indisponible</option>
+                                  </select>
+                                </div>
+                              </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Spécialités / Domaines d'intervention (séparés par des virgules)</label>
-                            <input
-                              type="text"
-                              placeholder="ex: Droit Associatif, Différends d'Honneur, Statuts & Gouvernance"
-                              value={typeof disputeOfficerForm.specialties === 'string' ? disputeOfficerForm.specialties : (disputeOfficerForm.specialties || []).join(', ')}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, specialties: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">URL Photo / Avatar</label>
-                            <input
-                              type="text"
-                              placeholder="https://..."
-                              value={disputeOfficerForm.avatar_url}
-                              onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, avatar_url: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                            />
-                          </div>
-                        </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Expérience (années)</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={disputeOfficerForm.experience_years}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, experience_years: parseInt(e.target.value) || 0 })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Dossiers traités (nombre)</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={disputeOfficerForm.cases_handled}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, cases_handled: parseInt(e.target.value) || 0 })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Email professionnel</label>
+                                  <input
+                                    type="email"
+                                    placeholder="ex: g.leroy@droit-justice.asso.fr"
+                                    value={disputeOfficerForm.email}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, email: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                              </div>
 
-                        <div className="flex gap-2 justify-end pt-3 border-t border-slate-200">
-                          <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition-colors">Annuler</button>
-                          <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg flex items-center gap-2 cursor-pointer shadow-md shadow-amber-500/20 transition-all"><Save className="w-4 h-4" /> Enregistrer l'Intervenant</button>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Spécialités / Domaines d'intervention (séparés par virgules)</label>
+                                  <input
+                                    type="text"
+                                    placeholder="ex: Droit Associatif, Différends d'Honneur, Statuts & Gouvernance"
+                                    value={typeof disputeOfficerForm.specialties === 'string' ? disputeOfficerForm.specialties : (disputeOfficerForm.specialties || []).join(', ')}
+                                    onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, specialties: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Photo de Profil / Avatar</label>
+                                  <input
+                                    type="file"
+                                    ref={officerAvatarInputRef}
+                                    accept="image/*"
+                                    onChange={handleOfficerAvatarFileUpload}
+                                    className="hidden"
+                                  />
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-300 shadow-2xs">
+                                    <img
+                                      src={disputeOfficerForm.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400'}
+                                      alt="Aperçu photo"
+                                      className="w-14 h-14 rounded-xl object-cover border-2 border-amber-400 shadow-xs shrink-0"
+                                    />
+                                    <div className="flex-1 w-full space-y-2">
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => officerAvatarInputRef.current?.click()}
+                                          className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                                        >
+                                          <Upload className="w-3.5 h-3.5" />
+                                          <span>Choisir une photo...</span>
+                                        </button>
+                                        {disputeOfficerForm.avatar_url && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setDisputeOfficerForm(prev => ({ ...prev, avatar_url: '' }))}
+                                            className="px-3 py-2 bg-slate-200 hover:bg-rose-100 text-slate-600 hover:text-rose-700 text-xs font-semibold rounded-xl transition-all cursor-pointer"
+                                          >
+                                            Réinitialiser
+                                          </button>
+                                        )}
+                                      </div>
+                                      <input
+                                        type="text"
+                                        placeholder="Ou collez une URL d'image (https://...)"
+                                        value={disputeOfficerForm.avatar_url}
+                                        onChange={e => setDisputeOfficerForm({ ...disputeOfficerForm, avatar_url: e.target.value })}
+                                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="px-8 py-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-4">
+                              <button
+                                type="button"
+                                onClick={() => setIsEditing(false)}
+                                className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-all"
+                              >
+                                Annuler
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 cursor-pointer shadow-md shadow-amber-500/25 hover:shadow-lg transition-all"
+                              >
+                                <Save className="w-4 h-4" />
+                                <span>Enregistrer l'Intervenant</span>
+                              </button>
+                            </div>
+                          </form>
                         </div>
-                      </form>
-                    ) : null}
+                      </div>
+                    )}
 
                     {/* Officers Grid matching Image 2 design */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1833,7 +2027,7 @@ export default function Dashboard({
                                 </button>
 
                                 <button
-                                  onClick={() => handleDeleteDisputeOfficer(off.id)}
+                                  onClick={() => handleDeleteDisputeOfficer(off.id, off.name)}
                                   className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                   title="Supprimer"
                                 >
@@ -1855,313 +2049,572 @@ export default function Dashboard({
               })()}
 
               {/* SUB-TAB 2: CASES */}
-              {disputeSubTab === 'cases' && (
-                <div>
-                  {isEditing ? (
-                    <form onSubmit={handleSaveDisputeCase} className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6 shadow-xs">
-                      <h3 className="font-semibold text-amber-700 text-sm mb-2">{disputeCaseForm.id ? 'Modifier l\'affaire' : 'Créer une affaire de litige'}</h3>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">N° de Dossier / Référence</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: LIT-2026-001"
-                            value={disputeCaseForm.case_number}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, case_number: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Intitulé de l'Affaire</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: Contestation d'interprétation statutaire"
-                            value={disputeCaseForm.title}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, title: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
+              {disputeSubTab === 'cases' && (() => {
+                const filteredCases = disputeCases.filter((c: any) => {
+                  let matchesSearch = true;
+                  if (caseSearchQuery.trim()) {
+                    const q = caseSearchQuery.toLowerCase();
+                    matchesSearch =
+                      (c.case_number && c.case_number.toLowerCase().includes(q)) ||
+                      (c.id && c.id.toLowerCase().includes(q)) ||
+                      (c.title && c.title.toLowerCase().includes(q)) ||
+                      (c.summary && c.summary.toLowerCase().includes(q)) ||
+                      (c.parties && c.parties.toLowerCase().includes(q)) ||
+                      (c.assigned_officer && c.assigned_officer.toLowerCase().includes(q)) ||
+                      (c.date_submitted && c.date_submitted.toLowerCase().includes(q));
+                  }
+
+                  let matchesCategory = true;
+                  if (caseCategoryFilter !== 'all') {
+                    matchesCategory = (c.category || '').toLowerCase() === caseCategoryFilter.toLowerCase();
+                  }
+
+                  let matchesStage = true;
+                  if (caseStageFilter !== 'all') {
+                    matchesStage = (c.stage || '').toLowerCase() === caseStageFilter.toLowerCase();
+                  }
+
+                  let matchesStatus = true;
+                  if (caseStatusFilter !== 'all') {
+                    matchesStatus = (c.status || '').toLowerCase() === caseStatusFilter.toLowerCase();
+                  }
+
+                  return matchesSearch && matchesCategory && matchesStage && matchesStatus;
+                }).sort((a: any, b: any) => {
+                  if (caseSortBy === 'date-desc') {
+                    return (new Date(b.created_at || b.date_submitted || 0).getTime() || 0) - (new Date(a.created_at || a.date_submitted || 0).getTime() || 0);
+                  } else if (caseSortBy === 'date-asc') {
+                    return (new Date(a.created_at || a.date_submitted || 0).getTime() || 0) - (new Date(b.created_at || b.date_submitted || 0).getTime() || 0);
+                  } else if (caseSortBy === 'code-asc') {
+                    return (a.case_number || a.id || '').localeCompare(b.case_number || b.id || '');
+                  } else if (caseSortBy === 'title-asc') {
+                    return (a.title || '').localeCompare(b.title || '');
+                  }
+                  return 0;
+                });
+
+                return (
+                  <div className="space-y-6">
+                    {/* Dispute Case Form Modal */}
+                    {isEditing && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+                        <div className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto transform transition-all">
+                          {/* Modal Header */}
+                          <div className="px-8 py-6 bg-gradient-to-r from-amber-500/10 via-slate-50 to-white border-b border-slate-200/90 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0">
+                                <Briefcase className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h3 className="font-serif font-bold text-slate-900 text-lg md:text-xl flex items-center gap-2">
+                                  <span>{disputeCaseForm.id ? 'Modifier l\'affaire' : 'Créer une affaire de litige'}</span>
+                                </h3>
+                                <p className="text-xs md:text-sm text-slate-500 mt-0.5">Renseignez les détails du dossier, de la procédure et des parties</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsEditing(false)}
+                              className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-2xl transition-colors cursor-pointer"
+                              title="Fermer"
+                            >
+                              <X className="w-6 h-6" />
+                            </button>
+                          </div>
+
+                          {/* Form Body */}
+                          <form onSubmit={handleSaveDisputeCase}>
+                            <div className="p-8 space-y-6 max-h-[78vh] overflow-y-auto">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">N° de Dossier / Référence</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    placeholder="ex: LIT-2026-001"
+                                    value={disputeCaseForm.case_number}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, case_number: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono shadow-2xs"
+                                  />
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Intitulé de l'Affaire</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    placeholder="ex: Contestation d'interprétation statutaire"
+                                    value={disputeCaseForm.title}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, title: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Catégorie</label>
+                                  <select
+                                    value={disputeCaseForm.category}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, category: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                  >
+                                    <option value="interne">Litiges Internes</option>
+                                    <option value="externe">Litiges Externes</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Étape Procédurale</label>
+                                  <select
+                                    value={disputeCaseForm.stage}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, stage: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                  >
+                                    {stagesList.map((s, idx) => (
+                                      <option key={s.id || s.key || idx} value={s.key}>
+                                        {s.stepNumber ? `${s.stepNumber} : ` : ''}{s.title ? s.title.replace(/^Étape \d+\s*:\s*/i, '') : s.key}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Visibilité Publique / Confidentielle</label>
+                                  <select
+                                    value={disputeCaseForm.is_public ? 'true' : 'false'}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, is_public: e.target.value === 'true' })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 font-semibold focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                  >
+                                    <option value="true">Publique (Visible par tous)</option>
+                                    <option value="false">Non Publique (Confidentielle)</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Statut Procédural</label>
+                                  <select
+                                    value={disputeCaseForm.status}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, status: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                  >
+                                    <option value="En cours">En cours</option>
+                                    <option value="En instruction">En instruction</option>
+                                    <option value="Accord Homologué">Accord Homologué</option>
+                                    <option value="Sentence Arbitrale">Sentence Arbitrale</option>
+                                    <option value="Clôturé">Clôturé</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Parties impliquées</label>
+                                  <input
+                                    type="text"
+                                    placeholder="ex: Partie A c/ Partie B"
+                                    value={disputeCaseForm.parties}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, parties: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Officiel Assigné</label>
+                                  <input
+                                    type="text"
+                                    placeholder="ex: Maître Hélène de Saint-Maur"
+                                    value={disputeCaseForm.assigned_officer}
+                                    onChange={e => setDisputeCaseForm({ ...disputeCaseForm, assigned_officer: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Synthèse / Résumé du Litige</label>
+                                <textarea
+                                  required
+                                  rows={4}
+                                  placeholder="Description succincte des faits et prétentions..."
+                                  value={disputeCaseForm.summary}
+                                  onChange={e => setDisputeCaseForm({ ...disputeCaseForm, summary: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Notice de Confidentialité (Pour affaires non publiques)</label>
+                                <input
+                                  type="text"
+                                  placeholder="Notice affichée si l'affaire est confidentielle..."
+                                  value={disputeCaseForm.confidentiality_note}
+                                  onChange={e => setDisputeCaseForm({ ...disputeCaseForm, confidentiality_note: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="px-8 py-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-4">
+                              <button
+                                type="button"
+                                onClick={() => setIsEditing(false)}
+                                className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-all"
+                              >
+                                Annuler
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 cursor-pointer shadow-md shadow-amber-500/25 hover:shadow-lg transition-all"
+                              >
+                                <Save className="w-4 h-4" />
+                                <span>Enregistrer le Dossier</span>
+                              </button>
+                            </div>
+                          </form>
                         </div>
                       </div>
+                    )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Catégorie</label>
+                    {/* Search & Filtering Bar for Cases */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 shadow-2xs">
+                      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                        {/* Search Input */}
+                        <div className="relative flex-1">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            placeholder="Rechercher par N° de dossier (code), intitulé, résumé, parties, officiel..."
+                            value={caseSearchQuery}
+                            onChange={e => setCaseSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                          />
+                          {caseSearchQuery && (
+                            <button
+                              onClick={() => setCaseSearchQuery('')}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Filter by Category */}
+                        <div className="flex items-center gap-2">
+                          <Filter className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                           <select
-                            value={disputeCaseForm.category}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, category: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
+                            value={caseCategoryFilter}
+                            onChange={e => setCaseCategoryFilter(e.target.value)}
+                            className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 cursor-pointer"
                           >
+                            <option value="all">Toutes catégories (Internes & Externes)</option>
                             <option value="interne">Litiges Internes</option>
                             <option value="externe">Litiges Externes</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Étape Procédurale</label>
+
+                        {/* Filter by Status */}
+                        <select
+                          value={caseStatusFilter}
+                          onChange={e => setCaseStatusFilter(e.target.value)}
+                          className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 cursor-pointer"
+                        >
+                          <option value="all">Tous les statuts</option>
+                          <option value="En cours">En cours</option>
+                          <option value="En instruction">En instruction</option>
+                          <option value="Accord Homologué">Accord Homologué</option>
+                          <option value="Sentence Arbitrale">Sentence Arbitrale</option>
+                          <option value="Clôturé">Clôturé</option>
+                        </select>
+
+                        {/* Sorting Select */}
+                        <div className="flex items-center gap-2">
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                           <select
-                            value={disputeCaseForm.stage}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, stage: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
+                            value={caseSortBy}
+                            onChange={e => setCaseSortBy(e.target.value)}
+                            className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-medium cursor-pointer"
                           >
-                            {stagesList.map((s, idx) => (
-                              <option key={s.id || s.key || idx} value={s.key}>
-                                {s.stepNumber ? `${s.stepNumber} : ` : ''}{s.title ? s.title.replace(/^Étape \d+\s*:\s*/i, '') : s.key}
-                              </option>
-                            ))}
+                            <option value="date-desc">Tri : Récent en premier</option>
+                            <option value="date-asc">Tri : Ancien en premier</option>
+                            <option value="code-asc">Tri : N° Dossier (Code)</option>
+                            <option value="title-asc">Tri : Intitulé (A → Z)</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Visibilité Publique / Confidentielle</label>
-                          <select
-                            value={disputeCaseForm.is_public ? 'true' : 'false'}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, is_public: e.target.value === 'true' })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium"
+                      </div>
+
+                      {/* Active filter counter line */}
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200">
+                        <span>Affichage de <strong className="text-amber-700">{filteredCases.length}</strong> sur <strong>{disputeCases.length}</strong> affaires enregistrées</span>
+                        {(caseSearchQuery || caseCategoryFilter !== 'all' || caseStatusFilter !== 'all') && (
+                          <button
+                            onClick={() => {
+                              setCaseSearchQuery('');
+                              setCaseCategoryFilter('all');
+                              setCaseStatusFilter('all');
+                            }}
+                            className="text-amber-700 hover:underline cursor-pointer font-medium"
                           >
-                            <option value="true">Publique (Visible par tous)</option>
-                            <option value="false">Non Publique (Confidentielle)</option>
-                          </select>
+                            Réinitialiser les filtres
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Cases Cards List */}
+                    <div className="space-y-4">
+                      {filteredCases.length === 0 ? (
+                        <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl text-slate-500 text-sm">
+                          Aucune affaire ne correspond à vos critères de recherche.
                         </div>
-                      </div>
+                      ) : (
+                        filteredCases.map((c: any) => {
+                          const isPub = c.is_public === true || c.is_public === 1 || c.isPublic === true;
+                          const codeDisplay = c.case_number || c.caseNumber || c.id;
+                          const dateDisplay = c.date_submitted || c.dateSubmitted || (c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '29 Septembre 2026');
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Statut Procédural</label>
-                          <select
-                            value={disputeCaseForm.status}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, status: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          >
-                            <option value="En cours">En cours</option>
-                            <option value="En instruction">En instruction</option>
-                            <option value="Accord Homologué">Accord Homologué</option>
-                            <option value="Sentence Arbitrale">Sentence Arbitrale</option>
-                            <option value="Clôturé">Clôturé</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Parties impliquées</label>
-                          <input
-                            type="text"
-                            placeholder="ex: Partie A c/ Partie B"
-                            value={disputeCaseForm.parties}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, parties: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Officiel Assigné</label>
-                          <input
-                            type="text"
-                            placeholder="ex: Maître Hélène de Saint-Maur"
-                            value={disputeCaseForm.assigned_officer}
-                            onChange={e => setDisputeCaseForm({ ...disputeCaseForm, assigned_officer: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                      </div>
+                          return (
+                            <div key={c.id} className="p-5 bg-white border border-slate-200/90 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs hover:shadow-md transition-all">
+                              <div className="space-y-2 flex-1">
+                                {/* Header badges row with Code and Registration Date */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {/* Code N° Dossier Badge */}
+                                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs flex items-center gap-1.5">
+                                    <Tag className="w-3.5 h-3.5 text-amber-700" />
+                                    <span>N° {codeDisplay}</span>
+                                  </span>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Synthèse / Résumé du Litige</label>
-                        <textarea
-                          required
-                          rows={3}
-                          placeholder="Description succincte des faits et prétentions..."
-                          value={disputeCaseForm.summary}
-                          onChange={e => setDisputeCaseForm({ ...disputeCaseForm, summary: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                        />
-                      </div>
+                                  {/* Registration Date Badge */}
+                                  <span className="text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                                    <span>Enregistré le {dateDisplay}</span>
+                                  </span>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Notice de Confidentialité (Pour affaires non publiques)</label>
-                        <input
-                          type="text"
-                          placeholder="Notice affichée si l'affaire est confidentielle..."
-                          value={disputeCaseForm.confidentiality_note}
-                          onChange={e => setDisputeCaseForm({ ...disputeCaseForm, confidentiality_note: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                        />
-                      </div>
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                    {c.category} • {c.stage}
+                                  </span>
 
-                      <div className="flex gap-2 justify-end pt-2">
-                        <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer">Annuler</button>
-                        <button type="submit" className="px-4 py-2 bg-amber-500 text-white text-xs font-semibold rounded-lg flex items-center gap-2 cursor-pointer shadow-md shadow-amber-500/20"><Save className="w-4 h-4" /> Enregistrer le Dossier</button>
-                      </div>
-                    </form>
-                  ) : null}
+                                  {isPub ? (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                                      <Unlock className="w-3 h-3" /> Publique
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1">
+                                      <Lock className="w-3 h-3" /> Confidentielle
+                                    </span>
+                                  )}
 
-                  <div className="space-y-3">
-                    {disputeCases.map((c: any) => {
-                      const isPub = c.is_public === true || c.is_public === 1 || c.isPublic === true;
-                      return (
-                        <div key={c.id} className="p-4 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center justify-between gap-4 shadow-2xs">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-mono font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{c.case_number || c.caseNumber || c.id}</span>
-                              <span className="text-[10px] uppercase font-bold text-slate-500">{c.category} • {c.stage}</span>
-                              {isPub ? (
-                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1"><Unlock className="w-3 h-3" /> Publique</span>
-                              ) : (
-                                <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1"><Lock className="w-3 h-3" /> Confidentielle</span>
-                              )}
-                              <span className="text-xs text-slate-500 ml-2">{c.status}</span>
+                                  <span className="text-xs font-bold text-amber-700 bg-amber-50/80 px-2.5 py-0.5 rounded-md border border-amber-200/60">
+                                    {c.status}
+                                  </span>
+                                </div>
+
+                                {/* Title */}
+                                <h4 className="font-serif font-bold text-slate-900 text-lg">{c.title}</h4>
+
+                                {/* Parties & Officer */}
+                                {(c.parties || c.assigned_officer) && (
+                                  <div className="flex flex-wrap gap-4 text-xs text-slate-500 font-medium">
+                                    {c.parties && <span><strong>Parties :</strong> {c.parties}</span>}
+                                    {c.assigned_officer && <span><strong>Officiel assigné :</strong> {c.assigned_officer}</span>}
+                                  </div>
+                                )}
+
+                                {/* Summary */}
+                                <p className="text-xs text-slate-600 line-clamp-2">{c.summary}</p>
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex items-center gap-2 shrink-0 md:self-center pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                                <button
+                                  onClick={() => {
+                                    setDisputeCaseForm({
+                                      id: c.id,
+                                      case_number: c.case_number || c.caseNumber || '',
+                                      title: c.title,
+                                      category: c.category,
+                                      stage: c.stage,
+                                      is_public: isPub,
+                                      status: c.status,
+                                      date_submitted: c.date_submitted || c.dateSubmitted || '',
+                                      summary: c.summary,
+                                      parties: c.parties || '',
+                                      assigned_officer: c.assigned_officer || c.assignedOfficer || '',
+                                      confidentiality_note: c.confidentiality_note || c.confidentialityNote || '',
+                                      resolution_timeframe: c.resolution_timeframe || c.resolutionTimeframe || '30 jours'
+                                    });
+                                    setIsEditing(true);
+                                  }}
+                                  className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors cursor-pointer border border-slate-200"
+                                  title="Modifier"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteDisputeCase(c.id, c.case_number || c.title)}
+                                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer border border-slate-200"
+                                  title="Supprimer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
-                            <h4 className="font-bold text-slate-900 text-base">{c.title}</h4>
-                            <p className="text-xs text-slate-600 mt-1 line-clamp-2">{c.summary}</p>
-                          </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button
-                              onClick={() => {
-                                setDisputeCaseForm({
-                                  id: c.id,
-                                  case_number: c.case_number || c.caseNumber || '',
-                                  title: c.title,
-                                  category: c.category,
-                                  stage: c.stage,
-                                  is_public: isPub,
-                                  status: c.status,
-                                  date_submitted: c.date_submitted || c.dateSubmitted || '',
-                                  summary: c.summary,
-                                  parties: c.parties || '',
-                                  assigned_officer: c.assigned_officer || c.assignedOfficer || '',
-                                  confidentiality_note: c.confidentiality_note || c.confidentialityNote || '',
-                                  resolution_timeframe: c.resolution_timeframe || c.resolutionTimeframe || '30 jours'
-                                });
-                                setIsEditing(true);
-                              }}
-                              className="p-2 text-slate-400 hover:text-amber-600 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
-                              title="Modifier"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteDisputeCase(c.id)}
-                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              title="Supprimer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* SUB-TAB 3: STAGES */}
               {disputeSubTab === 'stages' && (
-                <div>
-                  {isEditing ? (
-                    <form onSubmit={handleAddOrUpdateStage} className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6 shadow-xs">
-                      <h3 className="font-semibold text-amber-700 text-sm mb-2">{disputeStageForm.id ? 'Modifier l\'étape' : 'Créer une nouvelle étape de litige'}</h3>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Numéro d'Étape (ex: Étape 1)</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: Étape 1"
-                            value={disputeStageForm.stepNumber}
-                            onChange={e => setDisputeStageForm({ ...disputeStageForm, stepNumber: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
+                <div className="space-y-6">
+                  {/* Dispute Stage Form Modal */}
+                  {isEditing && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+                      <div className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto transform transition-all">
+                        {/* Modal Header */}
+                        <div className="px-8 py-6 bg-gradient-to-r from-amber-500/10 via-slate-50 to-white border-b border-slate-200/90 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0">
+                              <ShieldCheck className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-serif font-bold text-slate-900 text-lg md:text-xl flex items-center gap-2">
+                                <span>{disputeStageForm.id ? 'Modifier l\'étape de litige' : 'Créer une nouvelle étape de litige'}</span>
+                              </h3>
+                              <p className="text-xs md:text-sm text-slate-500 mt-0.5">Configurez le cadre réglementaire, l'intitulé et la garantie de confidentialité de cette étape</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditing(false)}
+                            className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-2xl transition-colors cursor-pointer"
+                            title="Fermer"
+                          >
+                            <X className="w-6 h-6" />
+                          </button>
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Clé identifiante (ex: conciliation)</label>
-                          <input
-                            type="text"
-                            placeholder="ex: conciliation"
-                            value={disputeStageForm.key}
-                            onChange={e => setDisputeStageForm({ ...disputeStageForm, key: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Intitulé des Intervenants</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: Les Conciliateurs Assermentés"
-                            value={disputeStageForm.officersTitle}
-                            onChange={e => setDisputeStageForm({ ...disputeStageForm, officersTitle: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                      </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Titre de l'étape (Cadre Réglementaire)</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: Étape 1 : La Conciliation Interne"
-                            value={disputeStageForm.title}
-                            onChange={e => setDisputeStageForm({ ...disputeStageForm, title: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Sous-titre / Court descriptif</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: Prévention et négociation amiable directe"
-                            value={disputeStageForm.subtitle}
-                            onChange={e => setDisputeStageForm({ ...disputeStageForm, subtitle: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                      </div>
+                        {/* Form Body */}
+                        <form onSubmit={handleAddOrUpdateStage}>
+                          <div className="p-8 space-y-6 max-h-[78vh] overflow-y-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Numéro d'Étape (ex: Étape 1)</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="ex: Étape 1"
+                                  value={disputeStageForm.stepNumber}
+                                  onChange={e => setDisputeStageForm({ ...disputeStageForm, stepNumber: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Clé identifiante (ex: conciliation)</label>
+                                <input
+                                  type="text"
+                                  placeholder="ex: conciliation"
+                                  value={disputeStageForm.key}
+                                  onChange={e => setDisputeStageForm({ ...disputeStageForm, key: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Intitulé des Intervenants</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="ex: Les Conciliateurs Assermentés"
+                                  value={disputeStageForm.officersTitle}
+                                  onChange={e => setDisputeStageForm({ ...disputeStageForm, officersTitle: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                            </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Description détaillée (Procédure Officielle)</label>
-                        <textarea
-                          required
-                          rows={3}
-                          placeholder="Explication complète du déroulement de l'étape..."
-                          value={disputeStageForm.description}
-                          onChange={e => setDisputeStageForm({ ...disputeStageForm, description: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                        />
-                      </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Titre de l'étape (Cadre Réglementaire)</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="ex: Étape 1 : La Conciliation Interne"
+                                  value={disputeStageForm.title}
+                                  onChange={e => setDisputeStageForm({ ...disputeStageForm, title: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Sous-titre / Court descriptif</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="ex: Prévention et négociation amiable directe"
+                                  value={disputeStageForm.subtitle}
+                                  onChange={e => setDisputeStageForm({ ...disputeStageForm, subtitle: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                            </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Base juridique</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: Article 12 du Règlement Intérieur"
-                            value={disputeStageForm.legalBasis}
-                            onChange={e => setDisputeStageForm({ ...disputeStageForm, legalBasis: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Garantie de confidentialité</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="ex: Confidentialité absolue garantie par..."
-                            value={disputeStageForm.confidentiality}
-                            onChange={e => setDisputeStageForm({ ...disputeStageForm, confidentiality: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900"
-                          />
-                        </div>
-                      </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Description détaillée (Procédure Officielle)</label>
+                              <textarea
+                                required
+                                rows={4}
+                                placeholder="Explication complète du déroulement de l'étape..."
+                                value={disputeStageForm.description}
+                                onChange={e => setDisputeStageForm({ ...disputeStageForm, description: e.target.value })}
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                              />
+                            </div>
 
-                      <div className="flex gap-2 justify-end pt-2">
-                        <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer">Annuler</button>
-                        <button type="submit" className="px-4 py-2 bg-amber-500 text-white text-xs font-semibold rounded-lg flex items-center gap-2 cursor-pointer shadow-md shadow-amber-500/20"><Save className="w-4 h-4" /> Enregistrer l'Étape</button>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Base juridique</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="ex: Article 12 du Règlement Intérieur"
+                                  value={disputeStageForm.legalBasis}
+                                  onChange={e => setDisputeStageForm({ ...disputeStageForm, legalBasis: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Garantie de confidentialité</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="ex: Confidentialité absolue garantie par..."
+                                  value={disputeStageForm.confidentiality}
+                                  onChange={e => setDisputeStageForm({ ...disputeStageForm, confidentiality: e.target.value })}
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Modal Footer */}
+                          <div className="px-8 py-5 bg-slate-50 border-t border-slate-200/90 flex items-center justify-end gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setIsEditing(false)}
+                              className="px-6 py-3 bg-white border border-slate-300 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-100 transition-colors cursor-pointer shadow-2xs"
+                            >
+                              Annuler
+                            </button>
+                            <button
+                              type="submit"
+                              className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-500/25 transition-all"
+                            >
+                              <Save className="w-4 h-4" />
+                              <span>Enregistrer l'Étape</span>
+                            </button>
+                          </div>
+                        </form>
                       </div>
-                    </form>
-                  ) : null}
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     {stagesList.map((stg: any) => (
@@ -2330,6 +2783,43 @@ export default function Dashboard({
           )}
         </div>
       </div>
+
+      {/* SweetAlert / Custom Delete Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 md:p-7 shadow-2xl border border-slate-200 overflow-hidden transform transition-all text-center">
+            {/* Top Warning Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+
+            <h3 className="text-lg font-serif font-bold text-slate-900 mb-2">
+              {confirmModal.title}
+            </h3>
+
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              {confirmModal.message}
+            </p>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={closeConfirmModal}
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                {confirmModal.cancelText}
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteConfirm}
+                className="flex-1 py-3 px-4 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-bold text-xs rounded-xl shadow-md shadow-rose-600/20 hover:shadow-rose-600/35 transition-all cursor-pointer"
+              >
+                {confirmModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
