@@ -251,7 +251,7 @@ function MainAppContent(props: any) {
         )}
 
         {activeTab === 'texts' && (
-          <TextsView />
+          <TextsView legalTexts={props.initialLegalTexts} />
         )}
 
         {activeTab === 'members' && (
@@ -275,10 +275,18 @@ function MainAppContent(props: any) {
         )}
 
         {activeTab === 'blog' && (
-          <BlogView articles={props.initialArticles} />
+          <BlogView 
+            articles={props.initialArticles} 
+            articleCategories={props.siteSettings?.article_categories} 
+          />
         )}
 
-        {activeTab === 'contact' && <ContactView />}
+        {activeTab === 'contact' && (
+          <ContactView 
+            contactDepartments={props.siteSettings?.contact_departments}
+            contactFaqs={props.siteSettings?.contact_faqs}
+          />
+        )}
       </main>
 
       {/* Institutional Footer */}

@@ -13,11 +13,21 @@ class LegalText extends Model
     protected $fillable = [
         'id',
         'title',
+        'titleEn',
+        'subtitle',
+        'subtitleEn',
         'reference',
+        'referenceEn',
         'category',
         'date',
+        'dateEn',
         'summary',
         'full_text',
         'pdf_url',
+        'sections'
+    ];
+
+    protected $casts = [
+        'sections' => 'array'
     ];
 }

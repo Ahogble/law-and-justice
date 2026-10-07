@@ -275,7 +275,7 @@ export const PdfStreamModal: React.FC<PdfStreamModalProps> = ({
                     </div>
                     <div className="text-right">
                       <span className="text-[10px] text-slate-300 block">Cotisation annuelle acquittée</span>
-                      <strong className="text-base font-bold text-[#C5A059]">{data.tierPrice} € TTC</strong>
+                      <strong className="text-base font-bold text-[#C5A059]">{data.tierPrice.toLocaleString('fr-FR')} FCFA TTC</strong>
                     </div>
                   </div>
 

@@ -82,6 +82,13 @@ class AdminController extends Controller
             'disputeCases' => DisputeCase::orderBy('created_at', 'desc')->get(),
             'disputeStages' => SiteSetting::getByKey('dispute_stages', self::getDefaultDisputeStages()),
             'memberCategories' => SiteSetting::getByKey('member_categories', []),
+            'articleCategories' => SiteSetting::getByKey('article_categories', [
+                ['id' => 'artcat-1', 'name' => 'Doctrine', 'nameEn' => 'Doctrine'],
+                ['id' => 'artcat-2', 'name' => 'Jurisprudence', 'nameEn' => 'Case Law'],
+                ['id' => 'artcat-3', 'name' => 'Libertés Fondamentales', 'nameEn' => 'Fundamental Freedoms'],
+                ['id' => 'artcat-4', 'name' => 'Droit & Numérique', 'nameEn' => 'Digital & Law'],
+                ['id' => 'artcat-5', 'name' => 'Actualités Institutionnelles', 'nameEn' => 'Institutional News']
+            ]),
             'settings' => [
                 'hero_title' => SiteSetting::getByKey('hero_title', ''),
                 'hero_subtitle' => SiteSetting::getByKey('hero_subtitle', ''),
@@ -90,6 +97,11 @@ class AdminController extends Controller
                 'contact_phone' => SiteSetting::getByKey('contact_phone', ''),
                 'contact_address' => SiteSetting::getByKey('contact_address', ''),
             ],
+            'contactConfig' => [
+                'departments' => SiteSetting::getByKey('contact_departments', []),
+                'faqs' => SiteSetting::getByKey('contact_faqs', []),
+            ],
+            'membershipTiers' => SiteSetting::getByKey('membership_tiers', []),
         ]);
     }
 
@@ -124,6 +136,14 @@ class AdminController extends Controller
         Article::where('id', $id)->delete();
 
         return redirect()->back()->with('message', 'Article supprimé.');
+    }
+
+    public function saveArticleCategories(Request $request)
+    {
+        $categories = $request->input('categories', []);
+        SiteSetting::setByKey('article_categories', $categories);
+
+        return redirect()->back()->with('message', 'Catégories d\'articles enregistrées.');
     }
 
     // --- Members ---
@@ -230,16 +250,27 @@ class AdminController extends Controller
         $data = $request->validate([
             'id' => 'nullable|string',
             'title' => 'required|string',
+            'titleEn' => 'nullable|string',
+            'subtitle' => 'nullable|string',
+            'subtitleEn' => 'nullable|string',
             'reference' => 'nullable|string',
-            'category' => 'required|string',
+            'referenceEn' => 'nullable|string',
+            'category' => 'nullable|string',
             'date' => 'nullable|string',
-            'summary' => 'required|string',
+            'dateEn' => 'nullable|string',
+            'summary' => 'nullable|string',
             'full_text' => 'nullable|string',
             'pdf_url' => 'nullable|string',
+            'sections' => 'nullable',
         ]);
 
         $id = ! empty($data['id']) ? $data['id'] : ('text-'.Str::random(8));
         $data['id'] = $id;
+
+        if (isset($data['sections']) && is_string($data['sections'])) {
+            $data['sections'] = json_decode($data['sections'], true);
+        }
+
         LegalText::updateOrCreate(['id' => $id], $data);
 
         return redirect()->back()->with('message', 'Texte juridique enregistré.');
@@ -346,5 +377,28 @@ class AdminController extends Controller
         }
 
         return redirect()->back()->with('message', 'Paramètres du site mis à jour.');
+    }
+
+    public function saveContactConfig(Request $request)
+    {
+        if ($request->has('departments')) {
+            SiteSetting::setByKey('contact_departments', $request->input('departments'));
+        }
+        if ($request->has('faqs')) {
+            SiteSetting::setByKey('contact_faqs', $request->input('faqs'));
+        }
+
+        return redirect()->back()->with('message', 'Configuration de la page Contact mise à jour.');
+    }
+
+    public function saveMembershipTiers(Request $request)
+    {
+        $request->validate([
+            'tiers' => 'required|array',
+        ]);
+
+        SiteSetting::setByKey('membership_tiers', $request->input('tiers'));
+
+        return redirect()->back()->with('message', 'Statuts des membres mis à jour avec succès.');
     }
 }

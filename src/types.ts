@@ -60,6 +60,7 @@ export interface Activity {
 export interface Article {
   id: string;
   title: string;
+  title_en?: string;
   category: 'Doctrine' | 'Jurisprudence' | 'Libertés Fondamentales' | 'Droit & Numérique' | 'Actualités Institutionnelles';
   author: {
     name: string;
@@ -69,7 +70,9 @@ export interface Article {
   publishDate: string;
   readTime: string;
   summary: string;
+  summary_en?: string;
   content: string;
+  content_en?: string;
   tags: string[];
   featured?: boolean;
 }
@@ -77,11 +80,15 @@ export interface Article {
 export interface MembershipTier {
   id: string;
   name: string;
+  nameEn?: string;
   price: number;
   period: string;
+  periodEn?: string;
   targetAudience: string;
+  targetAudienceEn?: string;
   popular?: boolean;
   benefits: string[];
+  benefitsEn?: string[];
 }
 
 export type DisputeCategory = 'interne' | 'externe';
