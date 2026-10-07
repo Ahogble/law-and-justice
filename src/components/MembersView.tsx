@@ -5,7 +5,21 @@ import { useLanguage } from '../i18n/LanguageContext';
 
 interface MembersViewProps {
   onJoinClick: () => void;
+  members?: Member[];
+  memberCategories?: MemberCategory[];
 }
+
+const DEFAULT_MEMBER_CATEGORIES_FALLBACK: MemberCategory[] = [
+  {
+    id: 'cat-1',
+    name: "Conseil d'Administration",
+    nameEn: "Board of Directors",
+    subcategories: [
+      { id: 'sub-1-1', name: 'National', nameEn: 'National' },
+      { id: 'sub-1-2', name: 'Local', nameEn: 'Local' }
+    ]
+  }
+];
 
 const CATEGORY_MAP: Record<string, { fr: string; en: string }> = {
   'Tous': { fr: 'Tous', en: 'All' },
@@ -60,6 +74,30 @@ const MEMBER_TRANSLATIONS: Record<string, {
   }
 };
 
+const COLOR_PALETTES = [
+  { bg: 'bg-amber-50/50', border: 'border-amber-200', text: 'text-amber-700', hoverBorder: 'group-hover:border-amber-400', tag: 'bg-amber-100/50 text-amber-800', hoverText: 'group-hover:text-amber-700' },
+  { bg: 'bg-blue-50/50', border: 'border-blue-200', text: 'text-blue-700', hoverBorder: 'group-hover:border-blue-400', tag: 'bg-blue-100/50 text-blue-800', hoverText: 'group-hover:text-blue-700' },
+  { bg: 'bg-emerald-50/50', border: 'border-emerald-200', text: 'text-emerald-700', hoverBorder: 'group-hover:border-emerald-400', tag: 'bg-emerald-100/50 text-emerald-800', hoverText: 'group-hover:text-emerald-700' },
+  { bg: 'bg-fuchsia-50/50', border: 'border-fuchsia-200', text: 'text-fuchsia-700', hoverBorder: 'group-hover:border-fuchsia-400', tag: 'bg-fuchsia-100/50 text-fuchsia-800', hoverText: 'group-hover:text-fuchsia-700' },
+  { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', hoverBorder: 'group-hover:border-slate-400', tag: 'bg-slate-100/70 text-slate-800', hoverText: 'group-hover:text-slate-700' },
+  { bg: 'bg-rose-50/50', border: 'border-rose-200', text: 'text-rose-700', hoverBorder: 'group-hover:border-rose-400', tag: 'bg-rose-100/50 text-rose-800', hoverText: 'group-hover:text-rose-700' },
+  { bg: 'bg-indigo-50/50', border: 'border-indigo-200', text: 'text-indigo-700', hoverBorder: 'group-hover:border-indigo-400', tag: 'bg-indigo-100/50 text-indigo-800', hoverText: 'group-hover:text-indigo-700' },
+];
+
+const getCategoryPalette = (categoryName: string) => {
+  if (categoryName === "Conseil d'Administration") return COLOR_PALETTES[0];
+  if (categoryName === "Universitaire") return COLOR_PALETTES[1];
+  if (categoryName === "Magistrat") return COLOR_PALETTES[2];
+  if (categoryName === "Avocat") return COLOR_PALETTES[3];
+  if (categoryName === "Juriste d'Entreprise") return COLOR_PALETTES[4];
+  
+  let hash = 0;
+  for (let i = 0; i < categoryName.length; i++) {
+    hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return COLOR_PALETTES[Math.abs(hash) % COLOR_PALETTES.length];
+};
+
 export const MembersView: React.FC<MembersViewProps> = ({ 
   onJoinClick, 
   members = [], 
@@ -111,7 +149,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
       category: isEn ? (CATEGORY_MAP[member.category]?.en || member.category) : member.category,
       subcategoryLabel: getSubcatDisplayLabel(member.category, member.subcategory),
       bio: isEn && extra ? extra.bioEn : member.bio,
-      specialties: isEn && extra ? extra.specialtiesEn : member.specialties
+      specialties: isEn && extra ? extra.specialtiesEn : (member.specialties || [])
     };
   };
 
@@ -142,7 +180,17 @@ export const MembersView: React.FC<MembersViewProps> = ({
             {/* Categories */}
             <div className="flex flex-wrap gap-2">
               {categoryKeys.map((catKey) => {
-                const label = isEn ? CATEGORY_MAP[catKey].en : CATEGORY_MAP[catKey].fr;
+                let label = catKey;
+                if (catKey === 'Tous') {
+                  label = isEn ? 'All' : 'Tous';
+                } else {
+                  const catObj = categoriesList.find(c => c.name === catKey);
+                  if (catObj) {
+                    label = isEn ? (catObj.nameEn || catObj.name) : catObj.name;
+                  } else {
+                    label = isEn ? (CATEGORY_MAP[catKey]?.en || catKey) : (CATEGORY_MAP[catKey]?.fr || catKey);
+                  }
+                }
                 const isSelected = selectedCategoryKey === catKey;
 
                 return (
@@ -220,34 +268,35 @@ export const MembersView: React.FC<MembersViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredMembers.map((member) => {
               const mData = getMemberData(member);
+              const palette = getCategoryPalette(member.category);
 
               return (
                 <div
                   key={member.id}
-                  onClick={() => setActiveMember(member)}
-                  className="bg-white rounded border border-[#e2e2e2] p-6 ambient-shadow-hover flex flex-col justify-between cursor-pointer group"
+                  onClick={() => setSelectedMember(member)}
+                  className={`rounded-xl border p-6 ambient-shadow-hover flex flex-col justify-between cursor-pointer group transition-all duration-300 ${palette.bg} ${palette.border} hover:shadow-md ${palette.hoverBorder}`}
                 >
                   <div>
                     <div className="flex items-start gap-4 mb-4">
                       <img
                         src={member.avatarUrl}
                         alt={member.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-[#e2e2e2] group-hover:border-[#C5A059] transition-colors"
+                        className={`w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm transition-colors ${palette.hoverBorder}`}
                       />
                       <div className="flex-1 min-w-0">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C5A059] block mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1.5 ${palette.text}`}>
                           {mData.category} {mData.subcategoryLabel ? `• ${mData.subcategoryLabel}` : ''}
                         </span>
-                        <h3 className="font-playfair text-lg font-bold text-[#031632] truncate group-hover:text-[#C5A059] transition-colors">
+                        <h3 className={`font-playfair text-lg font-bold text-[#031632] truncate transition-colors ${palette.hoverText}`}>
                           {member.name}
                         </h3>
-                        <p className="text-xs text-[#75777e] truncate">
+                        <p className="text-xs text-slate-600 truncate font-medium mt-0.5">
                           {mData.organization}
                         </p>
                       </div>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-[#44474d] line-clamp-3 mb-4 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-700 line-clamp-3 mb-4 leading-relaxed">
                       {mData.bio}
                     </p>
 
@@ -255,7 +304,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       {mData.specialties.map((spec, i) => (
                         <span
                           key={i}
-                          className="text-[11px] bg-[#f3f3f3] text-[#333333] px-2.5 py-1 rounded"
+                          className={`text-[10px] font-semibold px-2 py-1 rounded-md ${palette.tag}`}
                         >
                           {spec}
                         </span>
@@ -263,9 +312,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-[#75777e]">
+                  <div className="pt-4 border-t border-black/5 flex items-center justify-between text-xs text-slate-500 font-medium">
                     <span>{isEn ? `Member since ${member.joinedYear}` : `Membre depuis ${member.joinedYear}`}</span>
-                    <span className="text-[#031632] font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                    <span className={`font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1 ${palette.text}`}>
                       {isEn ? 'View profile →' : 'Consulter la fiche →'}
                     </span>
                   </div>
@@ -317,8 +366,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
       </div>
 
       {/* Member Details Modal */}
-      {activeMember && (() => {
-        const mData = getMemberData(activeMember);
+      {selectedMember && (() => {
+        const mData = getMemberData(selectedMember);
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -326,15 +375,15 @@ export const MembersView: React.FC<MembersViewProps> = ({
               {/* Modal Header */}
               <div className="bg-[#031632] text-white p-6 md:p-8 relative">
                 <button
-                  onClick={() => setActiveMember(null)}
+                  onClick={() => setSelectedMember(null)}
                   className="absolute top-4 right-4 text-white/70 hover:text-white p-2 cursor-pointer rounded-full hover:bg-white/10"
                 >
                   <X className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-5">
                   <img
-                    src={activeMember.avatarUrl}
-                    alt={activeMember.name}
+                    src={selectedMember.avatarUrl}
+                    alt={selectedMember.name}
                     className="w-20 h-20 rounded-full object-cover border-2 border-[#C5A059]"
                   />
                   <div>
@@ -342,7 +391,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       {mData.category} {mData.subcategoryLabel ? `• ${mData.subcategoryLabel}` : ''}
                     </span>
                     <h3 className="font-playfair text-2xl font-bold text-white">
-                      {activeMember.name}
+                      {selectedMember.name}
                     </h3>
                     <p className="text-xs text-[#8293b5] mt-1">
                       {mData.role}

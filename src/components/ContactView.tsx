@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send, Check, Shield, Building2 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
-export const ContactView: React.FC = () => {
+interface ContactViewProps {
+  contactDepartments?: any[];
+  contactFaqs?: any[];
+}
+
+export const ContactView: React.FC<ContactViewProps> = ({ contactDepartments, contactFaqs }) => {
   const { language } = useLanguage();
   const isEn = language === 'en';
 
@@ -31,7 +36,7 @@ export const ContactView: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const departments = [
+  const departments = contactDepartments && contactDepartments.length > 0 ? contactDepartments : [
     {
       id: 'secretariat',
       name: isEn ? 'General Secretariat' : 'Secrétariat Général',
@@ -58,7 +63,7 @@ export const ContactView: React.FC = () => {
     }
   ];
 
-  const faqs = [
+  const faqs = contactFaqs && contactFaqs.length > 0 ? contactFaqs : [
     {
       q: isEn ? 'How do I request a consultation at the Legal Aid Clinic?' : 'Comment solliciter une consultation auprès de la Clinique Juridique ?',
       a: isEn
@@ -382,10 +387,11 @@ export const ContactView: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                         className="w-full bg-white px-3 py-2 text-xs sm:text-sm border border-[#c5c6ce] rounded focus:ring-2 focus:ring-[#C5A059] focus:outline-none"
                       >
-                        <option value="secretariat">{isEn ? 'General Secretariat (Membership & Info)' : 'Secrétariat Général (Adhésions & Info)'}</option>
-                        <option value="clinique">{isEn ? 'Legal Aid Clinic (Access to Justice)' : 'Clinique Juridique (Permanence d\'accès au droit)'}</option>
-                        <option value="scientifique">{isEn ? 'Scientific Committee (Publications & Conferences)' : 'Comité Scientifique (Publications & Colloques)'}</option>
-                        <option value="presse">{isEn ? 'Press & Public Relations' : 'Presse & Relations Publiques'}</option>
+                        {departments.map((dept: any) => (
+                          <option key={dept.id} value={dept.id}>
+                            {isEn ? (dept.nameEn || dept.name) : dept.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -451,11 +457,11 @@ export const ContactView: React.FC = () => {
                 {departments.map((dept) => (
                   <div key={dept.id} className="bg-white p-4 rounded-lg border border-[#e2e2e2] hover:border-[#C5A059] transition-colors">
                     <h4 className="text-xs font-bold text-[#031632] flex items-center justify-between">
-                      <span>{dept.name}</span>
+                      <span>{isEn ? (dept.nameEn || dept.name) : dept.name}</span>
                       <span className="text-[10px] text-[#C5A059] uppercase font-semibold">Direct</span>
                     </h4>
                     <p className="text-[11px] text-[#44474d] mt-1 mb-2">
-                      {dept.desc}
+                      {isEn ? (dept.descEn || dept.desc) : dept.desc}
                     </p>
                     <a
                       href={`mailto:${dept.email}`}
@@ -517,14 +523,14 @@ export const ContactView: React.FC = () => {
                     onClick={() => setActiveFaq(isOpen ? null : idx)}
                     className="w-full text-left p-4 bg-[#f9f9f9] hover:bg-slate-100 flex items-center justify-between text-xs sm:text-sm font-bold text-[#031632] cursor-pointer"
                   >
-                    <span>{faq.q}</span>
+                    <span>{isEn ? (faq.qEn || faq.q) : faq.q}</span>
                     <span className="text-lg text-[#C5A059] font-mono leading-none">
                       {isOpen ? '−' : '+'}
                     </span>
                   </button>
                   {isOpen && (
                     <div className="p-4 text-xs sm:text-sm text-[#44474d] leading-relaxed bg-white border-t border-[#e2e2e2] animate-in fade-in duration-150">
-                      {faq.a}
+                      {isEn ? (faq.aEn || faq.a) : faq.a}
                     </div>
                   )}
                 </div>

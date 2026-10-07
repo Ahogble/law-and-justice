@@ -228,21 +228,22 @@ const DOCUMENTS: TextDocument[] = [
   }
 ];
 
-export const TextsView: React.FC = () => {
+export const TextsView: React.FC<{ legalTexts?: any[] }> = ({ legalTexts }) => {
   const { language } = useLanguage();
   const isEn = language === 'en';
 
-  const [selectedDocId, setSelectedDocId] = useState<string>('statuts');
+  const activeDocs = legalTexts && legalTexts.length > 0 ? legalTexts : DOCUMENTS;
+  const [selectedDocId, setSelectedDocId] = useState<string>(activeDocs[0]?.id || 'statuts');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [copiedArticle, setCopiedArticle] = useState<string | null>(null);
 
-  const currentDoc = DOCUMENTS.find((d) => d.id === selectedDocId) || DOCUMENTS[0];
+  const currentDoc = activeDocs.find((d) => d.id === selectedDocId) || activeDocs[0];
 
-  const docTitle = isEn ? currentDoc.titleEn : currentDoc.title;
-  const docSubtitle = isEn ? currentDoc.subtitleEn : currentDoc.subtitle;
-  const docDate = isEn ? currentDoc.dateEn : currentDoc.date;
-  const docRef = isEn ? currentDoc.referenceEn : currentDoc.reference;
+  const docTitle = isEn ? (currentDoc?.titleEn || currentDoc?.title) : currentDoc?.title;
+  const docSubtitle = isEn ? (currentDoc?.subtitleEn || currentDoc?.subtitle) : currentDoc?.subtitle;
+  const docDate = isEn ? (currentDoc?.dateEn || currentDoc?.date) : currentDoc?.date;
+  const docRef = isEn ? (currentDoc?.referenceEn || currentDoc?.reference) : currentDoc?.reference;
 
   const toggleSection = (sectionKey: string) => {
     setExpandedSections((prev) => ({
@@ -263,8 +264,8 @@ export const TextsView: React.FC = () => {
   };
 
   // Filter sections and articles based on search query
-  const filteredSections = currentDoc.sections
-    .map((section) => {
+  const filteredSections = (currentDoc?.sections || [])
+    .map((section: any) => {
       const sTitle = isEn ? section.titleEn : section.title;
       const filteredArticles = section.articles.filter((art) => {
         if (!searchQuery.trim()) return true;
@@ -315,11 +316,11 @@ export const TextsView: React.FC = () => {
         
         {/* Navigation & Document Selector Strip */}
         <div className="grid lg:grid-cols-3 gap-4">
-          {DOCUMENTS.map((doc) => {
+          {activeDocs.map((doc: any) => {
             const isSelected = selectedDocId === doc.id;
-            const cardTitle = isEn ? doc.titleEn : doc.title;
-            const cardSubtitle = isEn ? doc.subtitleEn : doc.subtitle;
-            const cardDate = isEn ? doc.dateEn : doc.date;
+            const cardTitle = isEn ? (doc.titleEn || doc.title) : doc.title;
+            const cardSubtitle = isEn ? (doc.subtitleEn || doc.subtitle) : doc.subtitle;
+            const cardDate = isEn ? (doc.dateEn || doc.date) : doc.date;
 
             return (
               <button

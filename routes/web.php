@@ -20,6 +20,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     // Articles
     Route::post('/articles', [AdminController::class, 'saveArticle'])->name('admin.articles.save');
     Route::delete('/articles/{id}', [AdminController::class, 'deleteArticle'])->name('admin.articles.delete');
+    Route::post('/article-categories', [AdminController::class, 'saveArticleCategories'])->name('admin.article-categories.save');
 
     // Members
     Route::post('/members', [AdminController::class, 'saveMember'])->name('admin.members.save');
@@ -45,6 +46,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::delete('/dispute-cases/{id}', [AdminController::class, 'deleteDisputeCase'])->name('admin.dispute-cases.delete');
     Route::post('/dispute-stages', [AdminController::class, 'saveDisputeStages'])->name('admin.dispute-stages.save');
 
-    // Settings
+    // Settings & Configs
     Route::post('/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
+    Route::post('/contact-config', [AdminController::class, 'saveContactConfig'])->name('admin.contact-config.save');
+    Route::post('/membership-tiers', [AdminController::class, 'saveMembershipTiers'])->name('admin.membership-tiers.save');
 });

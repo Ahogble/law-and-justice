@@ -36,6 +36,15 @@ class PublicController extends Controller
                 'association_pillars' => SiteSetting::getByKey('association_pillars', []),
                 'membership_tiers' => SiteSetting::getByKey('membership_tiers', []),
                 'member_categories' => SiteSetting::getByKey('member_categories', []),
+                'article_categories' => SiteSetting::getByKey('article_categories', [
+                    ['id' => 'artcat-1', 'name' => 'Doctrine', 'nameEn' => 'Doctrine'],
+                    ['id' => 'artcat-2', 'name' => 'Jurisprudence', 'nameEn' => 'Case Law'],
+                    ['id' => 'artcat-3', 'name' => 'Libertés Fondamentales', 'nameEn' => 'Fundamental Freedoms'],
+                    ['id' => 'artcat-4', 'name' => 'Droit & Numérique', 'nameEn' => 'Digital & Law'],
+                    ['id' => 'artcat-5', 'name' => 'Actualités Institutionnelles', 'nameEn' => 'Institutional News']
+                ]),
+                'contact_departments' => SiteSetting::getByKey('contact_departments', []),
+                'contact_faqs' => SiteSetting::getByKey('contact_faqs', []),
             ],
         ]);
     }

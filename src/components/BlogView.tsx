@@ -12,6 +12,30 @@ const CATEGORY_MAP: Record<string, { fr: string; en: string }> = {
   'Actualités Institutionnelles': { fr: 'Actualités Institutionnelles', en: 'Institutional News' }
 };
 
+const COLOR_PALETTES = [
+  { bg: 'bg-amber-50/50', border: 'border-amber-200', text: 'text-amber-700', hoverBorder: 'group-hover:border-amber-400', tag: 'bg-amber-100/50 text-amber-800', hoverText: 'group-hover:text-amber-700' },
+  { bg: 'bg-blue-50/50', border: 'border-blue-200', text: 'text-blue-700', hoverBorder: 'group-hover:border-blue-400', tag: 'bg-blue-100/50 text-blue-800', hoverText: 'group-hover:text-blue-700' },
+  { bg: 'bg-emerald-50/50', border: 'border-emerald-200', text: 'text-emerald-700', hoverBorder: 'group-hover:border-emerald-400', tag: 'bg-emerald-100/50 text-emerald-800', hoverText: 'group-hover:text-emerald-700' },
+  { bg: 'bg-fuchsia-50/50', border: 'border-fuchsia-200', text: 'text-fuchsia-700', hoverBorder: 'group-hover:border-fuchsia-400', tag: 'bg-fuchsia-100/50 text-fuchsia-800', hoverText: 'group-hover:text-fuchsia-700' },
+  { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', hoverBorder: 'group-hover:border-slate-400', tag: 'bg-slate-100/70 text-slate-800', hoverText: 'group-hover:text-slate-700' },
+  { bg: 'bg-rose-50/50', border: 'border-rose-200', text: 'text-rose-700', hoverBorder: 'group-hover:border-rose-400', tag: 'bg-rose-100/50 text-rose-800', hoverText: 'group-hover:text-rose-700' },
+  { bg: 'bg-indigo-50/50', border: 'border-indigo-200', text: 'text-indigo-700', hoverBorder: 'group-hover:border-indigo-400', tag: 'bg-indigo-100/50 text-indigo-800', hoverText: 'group-hover:text-indigo-700' },
+];
+
+const getCategoryPalette = (categoryName: string) => {
+  if (categoryName === "Doctrine") return COLOR_PALETTES[0];
+  if (categoryName === "Jurisprudence") return COLOR_PALETTES[1];
+  if (categoryName === "Libertés Fondamentales") return COLOR_PALETTES[2];
+  if (categoryName === "Droit & Numérique") return COLOR_PALETTES[3];
+  if (categoryName === "Actualités Institutionnelles") return COLOR_PALETTES[4];
+  
+  let hash = 0;
+  for (let i = 0; i < categoryName.length; i++) {
+    hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return COLOR_PALETTES[Math.abs(hash) % COLOR_PALETTES.length];
+};
+
 const ARTICLE_TRANSLATIONS: Record<string, {
   titleEn: string;
   categoryEn: string;
@@ -84,9 +108,10 @@ Our association formulates three concrete proposals to revaluate legal aid witho
 
 interface BlogViewProps {
   articles?: Article[];
+  articleCategories?: any[];
 }
 
-export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
+export const BlogView: React.FC<BlogViewProps> = ({ articles = [], articleCategories = [] }) => {
   const { language } = useLanguage();
   const isEn = language === 'en';
 
@@ -95,39 +120,47 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
 
-  const categoryKeys = [
-    'Tous',
-    'Doctrine',
-    'Jurisprudence',
-    'Libertés Fondamentales',
-    'Droit & Numérique',
-    'Actualités Institutionnelles'
-  ];
+  // Build dynamic categories array
+  const dynamicCategories = [{ id: 'all', name: 'Tous', nameEn: 'All' }, ...articleCategories];
+  if (articleCategories.length === 0) {
+    // fallback if none exist
+    dynamicCategories.push(
+      { id: 'c1', name: 'Doctrine', nameEn: 'Doctrine' },
+      { id: 'c2', name: 'Jurisprudence', nameEn: 'Case Law' },
+      { id: 'c3', name: 'Libertés Fondamentales', nameEn: 'Fundamental Freedoms' },
+      { id: 'c4', name: 'Droit & Numérique', nameEn: 'Digital & Law' },
+      { id: 'c5', name: 'Actualités Institutionnelles', nameEn: 'Institutional News' }
+    );
+  }
+
+  const categoryKeys = dynamicCategories.map(c => c.name);
 
   const filteredArticles = articles.filter((art) => {
     const matchesCat = selectedCategoryKey === 'Tous' || art.category === selectedCategoryKey;
     const extra = ARTICLE_TRANSLATIONS[art.id];
 
-    const titleMatch = (isEn && extra ? extra.titleEn : art.title).toLowerCase().includes(searchQuery.toLowerCase());
-    const summaryMatch = (isEn && extra ? extra.summaryEn : art.summary).toLowerCase().includes(searchQuery.toLowerCase());
-    const authorMatch = art.author.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const tagList = isEn && extra ? extra.tagsEn : art.tags;
-    const tagMatch = tagList.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    const titleMatch = (isEn ? (art.title_en || extra?.titleEn || art.title) : art.title)?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
+    const summaryMatch = (isEn ? (art.summary_en || extra?.summaryEn || art.summary) : art.summary)?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
+    const authorMatch = art.author?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
+    const tagList = (isEn && extra ? extra.tagsEn : art.tags) || [];
+    const tagMatch = tagList.some((t) => t?.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchesCat && (titleMatch || summaryMatch || authorMatch || tagMatch);
   });
 
   const getArticleData = (article: Article) => {
     const extra = ARTICLE_TRANSLATIONS[article.id];
+    const catFallback = dynamicCategories.find(c => c.name === article.category) || { name: article.category, nameEn: CATEGORY_MAP[article.category]?.en || article.category };
+    
     return {
-      title: isEn && extra ? extra.titleEn : article.title,
-      category: isEn ? (CATEGORY_MAP[article.category]?.en || article.category) : article.category,
+      title: isEn ? (article.title_en || extra?.titleEn || article.title) : article.title,
+      category: isEn ? catFallback.nameEn : catFallback.name,
       readTime: isEn && extra ? extra.readTimeEn : article.readTime,
       publishDate: isEn && extra ? extra.publishDateEn : article.publishDate,
-      summary: isEn && extra ? extra.summaryEn : article.summary,
-      content: isEn && extra ? extra.contentEn : article.content,
-      authorRole: isEn && extra ? extra.authorRoleEn : article.author.role,
-      tags: isEn && extra ? extra.tagsEn : article.tags
+      summary: isEn ? (article.summary_en || extra?.summaryEn || article.summary) : article.summary,
+      content: isEn ? (article.content_en || extra?.contentEn || article.content) : article.content,
+      authorRole: isEn && extra ? extra.authorRoleEn : article.author?.role || '',
+      tags: isEn && extra ? extra.tagsEn : (article.tags || [])
     };
   };
 
@@ -165,14 +198,14 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#e2e2e2]">
           {/* Categories */}
           <div className="flex flex-wrap gap-2">
-            {categoryKeys.map((catKey) => {
-              const label = isEn ? CATEGORY_MAP[catKey].en : CATEGORY_MAP[catKey].fr;
-              const isSelected = selectedCategoryKey === catKey;
+            {dynamicCategories.map((cat) => {
+              const label = isEn ? (cat.nameEn || CATEGORY_MAP[cat.name]?.en || cat.name) : cat.name;
+              const isSelected = selectedCategoryKey === cat.name;
 
               return (
                 <button
-                  key={catKey}
-                  onClick={() => setSelectedCategoryKey(catKey)}
+                  key={cat.id}
+                  onClick={() => setSelectedCategoryKey(cat.name)}
                   className={`text-xs font-semibold px-4 py-2 rounded transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-[#031632] text-white shadow-sm'
@@ -203,16 +236,17 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
           {filteredArticles.map((article) => {
             const isBookmarked = bookmarkedIds.includes(article.id);
             const aData = getArticleData(article);
+            const palette = getCategoryPalette(article.category);
 
             return (
               <article
                 key={article.id}
                 onClick={() => setActiveArticle(article)}
-                className="bg-white rounded-xl border border-[#e2e2e2] p-8 ambient-shadow-hover flex flex-col justify-between cursor-pointer group"
+                className={`rounded-xl border p-8 ambient-shadow-hover flex flex-col justify-between cursor-pointer group transition-all duration-300 ${palette.bg} ${palette.border} hover:shadow-md ${palette.hoverBorder}`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-4 mb-4">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#C5A059]">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${palette.text}`}>
                       {aData.category}
                     </span>
                     <div className="flex items-center gap-3 text-xs text-[#75777e]">
@@ -232,11 +266,11 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
                     </div>
                   </div>
 
-                  <h3 className="font-playfair text-2xl font-bold text-[#031632] mb-3 group-hover:text-[#C5A059] transition-colors leading-snug">
+                  <h3 className={`font-playfair text-2xl font-bold text-[#031632] mb-3 transition-colors leading-snug ${palette.hoverText}`}>
                     {aData.title}
                   </h3>
 
-                  <p className="text-sm text-[#44474d] leading-relaxed mb-6 line-clamp-3">
+                  <p className="text-sm text-slate-700 leading-relaxed mb-6 line-clamp-3">
                     {aData.summary}
                   </p>
 
@@ -244,7 +278,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
                     {aData.tags.map((tag, i) => (
                       <span
                         key={i}
-                        className="text-[11px] bg-[#f3f3f3] text-[#333333] px-2.5 py-1 rounded"
+                        className={`text-[10px] font-semibold px-2 py-1 rounded-md ${palette.tag}`}
                       >
                         #{tag}
                       </span>
@@ -252,23 +286,23 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-4 border-t border-black/5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <img
-                      src={article.author.avatar}
-                      alt={article.author.name}
-                      className="w-9 h-9 rounded-full object-cover border border-[#e2e2e2]"
+                      src={article.author?.avatar || '/placeholder-avatar.jpg'}
+                      alt={article.author?.name || 'Inconnu'}
+                      className={`w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm transition-colors ${palette.hoverBorder}`}
                     />
                     <div>
                       <div className="text-xs font-bold text-[#031632]">
-                        {article.author.name}
+                        {article.author?.name || 'Auteur inconnu'}
                       </div>
                       <div className="text-[11px] text-[#75777e]">
                         {aData.publishDate}
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-[#031632] group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                  <span className={`text-xs font-semibold group-hover:translate-x-1 transition-transform flex items-center gap-1 ${palette.text}`}>
                     {isEn ? 'Read article' : 'Lire la tribune'} <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
@@ -301,13 +335,13 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [] }) => {
                 </h2>
                 <div className="flex items-center gap-3">
                   <img
-                    src={activeArticle.author.avatar}
-                    alt={activeArticle.author.name}
+                    src={activeArticle.author?.avatar || '/placeholder-avatar.jpg'}
+                    alt={activeArticle.author?.name || 'Inconnu'}
                     className="w-10 h-10 rounded-full object-cover border-2 border-[#C5A059]"
                   />
                   <div>
                     <div className="text-xs font-semibold text-white">
-                      {activeArticle.author.name}
+                      {activeArticle.author?.name || 'Auteur inconnu'}
                     </div>
                     <div className="text-[11px] text-[#8293b5]">
                       {aData.authorRole} • {isEn ? `Published on ${aData.publishDate}` : `Publié le ${aData.publishDate}`}

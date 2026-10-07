@@ -3,6 +3,7 @@ import { X, Check, Scale, Shield, Award, ArrowRight, ArrowLeft, Download, Eye, F
 import { MembershipTier } from '../types';
 import { generateAdhesionPdfBlobUrl } from '../utils/generateAdhesionPdf';
 import { PdfStreamModal } from './PdfStreamModal';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface JoinModalProps {
   isOpen: boolean;
@@ -14,22 +15,34 @@ const DEFAULT_MEMBERSHIP_TIERS: MembershipTier[] = [
   {
     id: 'student',
     name: 'Membre Étudiant & Auditeur',
+    nameEn: 'Student & Auditor Member',
     price: 35,
     period: '/ an',
+    periodEn: '/ yr',
     targetAudience: 'Étudiants en Master de droit, élèves-avocats et auditeurs de justice.',
+    targetAudienceEn: 'Law Master students, student lawyers, and judicial auditors.',
     benefits: [
       'Accès libre à tous les colloques et webinaires de l’association',
       'Réception trimestrielle de la Revue de Doctrine Juridique',
       'Possibilité de contribuer à la Clinique Juridique & Accès au Droit',
       'Accompagnement et mentorat par un praticien chevronné'
+    ],
+    benefitsEn: [
+      'Free access to all association symposiums and webinars',
+      'Quarterly receipt of the Legal Doctrine Review',
+      'Opportunity to contribute to the Legal Clinic & Access to Law',
+      'Support and mentoring by an experienced practitioner'
     ]
   },
   {
     id: 'titular',
     name: 'Membre Titulaire',
+    nameEn: 'Titular Member',
     price: 150,
     period: '/ an',
+    periodEn: '/ yr',
     targetAudience: 'Avocats, magistrats, universitaires, notaires et juristes d’entreprise.',
+    targetAudienceEn: 'Lawyers, magistrates, academics, notaries, and corporate counsels.',
     popular: true,
     benefits: [
       'Droit de vote à l’Assemblée Générale annuelle',
@@ -37,25 +50,44 @@ const DEFAULT_MEMBERSHIP_TIERS: MembershipTier[] = [
       'Publication prioritaire dans le Blog & Bulletin de Doctrine',
       'Accès à l’annuaire exclusif des membres et au réseau professionnel',
       'Validation de 12 heures de formation continue annuelle (CNB / ENM)'
+    ],
+    benefitsEn: [
+      'Voting rights at the annual General Assembly',
+      'Participation in Working Groups and reform committees',
+      'Priority publication in the Blog & Doctrine Bulletin',
+      'Access to the exclusive members directory and professional network',
+      'Validation of 12 hours of annual continuing education (CNB / ENM)'
     ]
   },
   {
     id: 'benefactor',
     name: 'Membre Bienfaiteur',
+    nameEn: 'Benefactor Member',
     price: 450,
     period: '/ an',
+    periodEn: '/ yr',
     targetAudience: 'Cabinets, institutions, mécènes et personnalités souhaitant soutenir activement l’État de droit.',
+    targetAudienceEn: 'Firms, institutions, patrons, and personalities wishing to actively support the rule of law.',
     benefits: [
       'Tous les avantages du Membre Titulaire',
       'Invitation VIP au Dîner de Gala annuel de la Justice',
       'Mention honorifique dans le Rapport Annuel d’Activité',
       'Défiscalisation du don (reçu fiscal émis automatiquement)',
       'Accès réservé au Cercle des Présidents et Débats d’Orientation'
+    ],
+    benefitsEn: [
+      'All the benefits of the Titular Member',
+      'VIP invitation to the annual Justice Gala Dinner',
+      'Honorable mention in the Annual Activity Report',
+      'Tax deduction of the donation (tax receipt issued automatically)',
+      'Reserved access to the Presidents Circle and Orientation Debates'
     ]
   }
 ];
 
 export const JoinModal: React.FC<JoinModalProps> = ({ isOpen, onClose, membershipTiers = DEFAULT_MEMBERSHIP_TIERS }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const tiersToUse = membershipTiers.length > 0 ? membershipTiers : DEFAULT_MEMBERSHIP_TIERS;
   const [step, setStep] = useState<'tier' | 'form' | 'success'>('tier');
   const [selectedTier, setSelectedTier] = useState<MembershipTier>(tiersToUse[1] || tiersToUse[0]);
@@ -178,20 +210,20 @@ export const JoinModal: React.FC<JoinModalProps> = ({ isOpen, onClose, membershi
                       <div>
                         {tier.popular && (
                           <span className="text-[10px] uppercase font-bold tracking-wider bg-[#031632] text-white px-2 py-0.5 rounded inline-block mb-2">
-                            Recommandé
+                            {isEn ? 'Recommended' : 'Recommandé'}
                           </span>
                         )}
                         <h4 className="font-playfair text-base font-bold text-[#031632] mb-1">
-                          {tier.name}
+                          {isEn ? (tier.nameEn || tier.name) : tier.name}
                         </h4>
                         <div className="text-2xl font-bold text-[#031632] mb-2">
-                          {tier.price} € <span className="text-xs text-[#75777e] font-normal">{tier.period}</span>
+                          {tier.price.toLocaleString('fr-FR')} FCFA <span className="text-xs text-[#75777e] font-normal">{isEn ? (tier.periodEn || tier.period) : tier.period}</span>
                         </div>
                         <p className="text-[11px] text-[#44474d] mb-4">
-                          {tier.targetAudience}
+                          {isEn ? (tier.targetAudienceEn || tier.targetAudience) : tier.targetAudience}
                         </p>
                         <ul className="space-y-1.5 text-xs text-[#333333]">
-                          {tier.benefits.map((b, i) => (
+                          {(isEn && tier.benefitsEn && tier.benefitsEn.length > 0 ? tier.benefitsEn : tier.benefits).map((b, i) => (
                             <li key={i} className="flex items-start gap-1.5">
                               <Check className="w-3.5 h-3.5 text-[#C5A059] shrink-0 mt-0.5" />
                               <span className="text-[11px] leading-tight">{b}</span>
@@ -229,15 +261,15 @@ export const JoinModal: React.FC<JoinModalProps> = ({ isOpen, onClose, membershi
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex items-center justify-between bg-[#f9f9f9] p-3 rounded border border-[#e2e2e2] text-xs">
                 <div>
-                  <span className="text-[#75777e]">Formule sélectionnée : </span>
-                  <strong className="text-[#031632]">{selectedTier.name} ({selectedTier.price} €/an)</strong>
+                  <span className="text-[#75777e]">{isEn ? 'Selected Plan: ' : 'Formule sélectionnée : '}</span>
+                  <strong className="text-[#031632]">{isEn ? (selectedTier.nameEn || selectedTier.name) : selectedTier.name} ({selectedTier.price.toLocaleString('fr-FR')} FCFA{isEn ? (selectedTier.periodEn || selectedTier.period) : selectedTier.period})</strong>
                 </div>
                 <button
                   type="button"
                   onClick={() => setStep('tier')}
                   className="text-[#C5A059] hover:underline font-semibold"
                 >
-                  Changer de formule
+                  {isEn ? 'Change plan' : 'Changer de formule'}
                 </button>
               </div>
 
