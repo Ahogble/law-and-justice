@@ -17,7 +17,9 @@ export interface Member {
   id: string;
   name: string;
   role: string;
+  profession?: string;
   organization: string;
+  city?: string;
   category: string;
   subcategory?: string;
   bio: string;

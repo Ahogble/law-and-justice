@@ -276,7 +276,9 @@ class AdminController extends Controller
                 'id' => $memberId,
                 'name' => $fullName,
                 'role' => $application->profession ?: 'Membre Adhérent',
+                'profession' => $application->profession ?: 'Membre Adhérent',
                 'organization' => $application->institution ?: 'Membre Indépendant',
+                'city' => $application->locality ?: ($application->country ?: 'Paris'),
                 'category' => $category,
                 'subcategory' => $subcategory,
                 'bio' => $application->motivation,
@@ -294,7 +296,9 @@ class AdminController extends Controller
                     'category' => $category,
                     'subcategory' => $subcategory,
                     'role' => $application->profession ?: $existingMember->role,
+                    'profession' => $application->profession ?: $existingMember->profession,
                     'organization' => $application->institution ?: $existingMember->organization,
+                    'city' => $application->locality ?: ($application->country ?: $existingMember->city),
                     'avatar_url' => $application->avatar_url ?: $existingMember->avatar_url,
                 ]);
             }

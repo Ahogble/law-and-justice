@@ -7,6 +7,43 @@ interface ContactViewProps {
   contactFaqs?: any[];
 }
 
+const DEPT_PALETTES: Record<string, { bg: string; border: string; badge: string; text: string; hoverBorder: string }> = {
+  secretariat: {
+    bg: 'bg-gradient-to-br from-amber-100 via-amber-200/70 to-yellow-100',
+    border: 'border-amber-300',
+    badge: 'bg-white/90 text-amber-950 border-amber-300',
+    text: 'text-amber-950',
+    hoverBorder: 'hover:border-amber-500'
+  },
+  clinique: {
+    bg: 'bg-gradient-to-br from-blue-100 via-sky-200/70 to-blue-100',
+    border: 'border-blue-300',
+    badge: 'bg-white/90 text-blue-950 border-blue-300',
+    text: 'text-blue-950',
+    hoverBorder: 'hover:border-blue-500'
+  },
+  scientifique: {
+    bg: 'bg-gradient-to-br from-emerald-100 via-teal-200/70 to-emerald-100',
+    border: 'border-emerald-300',
+    badge: 'bg-white/90 text-emerald-950 border-emerald-300',
+    text: 'text-emerald-950',
+    hoverBorder: 'hover:border-emerald-500'
+  },
+  presse: {
+    bg: 'bg-gradient-to-br from-fuchsia-100 via-purple-200/70 to-pink-100',
+    border: 'border-fuchsia-300',
+    badge: 'bg-white/90 text-fuchsia-950 border-fuchsia-300',
+    text: 'text-fuchsia-950',
+    hoverBorder: 'hover:border-fuchsia-500'
+  }
+};
+
+const getDeptPalette = (id: string, index: number) => {
+  if (DEPT_PALETTES[id]) return DEPT_PALETTES[id];
+  const keys = Object.keys(DEPT_PALETTES);
+  return DEPT_PALETTES[keys[index % keys.length]];
+};
+
 export const ContactView: React.FC<ContactViewProps> = ({ contactDepartments, contactFaqs }) => {
   const { language } = useLanguage();
   const isEn = language === 'en';
@@ -113,94 +150,94 @@ export const ContactView: React.FC<ContactViewProps> = ({ contactDepartments, co
       <div className="max-w-[1280px] mx-auto px-5 md:px-16 mt-12 space-y-16">
         {/* Quick Contact Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-xl border border-[#e2e2e2] shadow-sm flex flex-col justify-between">
+          <div className="bg-gradient-to-br from-amber-200 via-amber-100 to-yellow-200 p-6 rounded-2xl border-2 border-amber-300 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4 shadow-sm">
                 <MapPin className="w-5 h-5" />
               </div>
               <h3 className="font-playfair text-lg font-bold text-[#031632] mb-1">
                 {isEn ? 'Institutional Headquarters' : 'Siège Institutionnel'}
               </h3>
-              <p className="text-xs text-[#75777e] mb-3">
+              <p className="text-xs font-semibold text-amber-900 mb-3">
                 {isEn ? 'In the heart of the judicial district' : 'Au cœur du quartier judiciaire'}
               </p>
-              <address className="not-italic text-xs text-[#333333] leading-relaxed">
+              <address className="not-italic text-xs text-slate-900 font-medium leading-relaxed">
                 12 rue Royale<br />
                 75008 Paris, France<br />
                 Métro Madeleine / Concorde
               </address>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-[#75777e]">
+            <div className="mt-4 pt-3 border-t border-amber-300/80 text-[11px] font-semibold text-amber-950">
               {isEn ? 'Public reception by appointment' : 'Accueil du public sur RDV'}
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl border border-[#e2e2e2] shadow-sm flex flex-col justify-between">
+          <div className="bg-gradient-to-br from-blue-200 via-sky-100 to-blue-200 p-6 rounded-2xl border-2 border-blue-300 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4 shadow-sm">
                 <Phone className="w-5 h-5" />
               </div>
               <h3 className="font-playfair text-lg font-bold text-[#031632] mb-1">
                 {isEn ? 'Direct Phone Line' : 'Ligne Directe'}
               </h3>
-              <p className="text-xs text-[#75777e] mb-3">
+              <p className="text-xs font-semibold text-blue-900 mb-3">
                 {isEn ? 'Duty Secretariat' : 'Secrétariat de permanence'}
               </p>
-              <p className="text-xs font-semibold text-[#031632] mb-1">
+              <p className="text-xs font-bold text-[#031632] mb-1">
                 +33 (0)1 42 68 00 00
               </p>
-              <p className="text-[11px] text-[#75777e]">
+              <p className="text-[11px] font-medium text-slate-800">
                 {isEn ? 'Line dedicated to members and colleagues' : 'Ligne dédiée aux membres et confrères'}
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-[#75777e]">
+            <div className="mt-4 pt-3 border-t border-blue-300/80 text-[11px] font-semibold text-blue-950">
               Fax : +33 (0)1 42 68 00 01
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl border border-[#e2e2e2] shadow-sm flex flex-col justify-between">
+          <div className="bg-gradient-to-br from-emerald-200 via-teal-100 to-emerald-200 p-6 rounded-2xl border-2 border-emerald-300 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4 shadow-sm">
                 <Mail className="w-5 h-5" />
               </div>
               <h3 className="font-playfair text-lg font-bold text-[#031632] mb-1">
                 {isEn ? 'Central Email' : 'Courriel Central'}
               </h3>
-              <p className="text-xs text-[#75777e] mb-3">
+              <p className="text-xs font-semibold text-emerald-900 mb-3">
                 {isEn ? 'Official correspondence' : 'Correspondance officielle'}
               </p>
               <a
                 href="mailto:contact@droit-justice.asso.fr"
-                className="text-xs font-semibold text-[#031632] hover:text-[#C5A059] transition-colors block mb-1 break-all"
+                className="text-xs font-bold text-[#031632] hover:text-emerald-950 transition-colors block mb-1 break-all underline decoration-emerald-400 decoration-2 underline-offset-2"
               >
                 contact@droit-justice.asso.fr
               </a>
-              <p className="text-[11px] text-[#75777e]">
+              <p className="text-[11px] font-medium text-slate-800">
                 {isEn ? 'PGP encryption available upon request' : 'Chiffrage PGP disponible sur demande'}
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-[#75777e]">
+            <div className="mt-4 pt-3 border-t border-emerald-300/80 text-[11px] font-semibold text-emerald-950">
               {isEn ? 'Response within 24h to 48h' : 'Réponse sous 24h à 48h'}
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl border border-[#e2e2e2] shadow-sm flex flex-col justify-between">
+          <div className="bg-gradient-to-br from-orange-200 via-rose-100 to-amber-200 p-6 rounded-2xl border-2 border-orange-300 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#031632] text-[#C5A059] flex items-center justify-center mb-4 shadow-sm">
                 <Clock className="w-5 h-5" />
               </div>
               <h3 className="font-playfair text-lg font-bold text-[#031632] mb-1">
                 {isEn ? 'Opening Hours' : 'Horaires d\'Ouverture'}
               </h3>
-              <p className="text-xs text-[#75777e] mb-3">
+              <p className="text-xs font-semibold text-orange-900 mb-3">
                 {isEn ? 'Paris office hours' : 'Heures de bureau de Paris'}
               </p>
-              <p className="text-xs text-[#333333] leading-relaxed">
+              <p className="text-xs text-slate-900 font-semibold leading-relaxed">
                 {isEn ? 'Monday to Friday' : 'Du lundi au vendredi'}<br />
                 09h00 – 12h30 &amp; 14h00 – 18h30
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-[#75777e]">
+            <div className="mt-4 pt-3 border-t border-orange-300/80 text-[11px] font-semibold text-orange-950">
               {isEn ? 'Closed Saturdays and Sundays' : 'Fermé les samedis et dimanches'}
             </div>
           </div>
@@ -454,45 +491,53 @@ export const ContactView: React.FC<ContactViewProps> = ({ contactDepartments, co
               </p>
 
               <div className="space-y-3">
-                {departments.map((dept) => (
-                  <div key={dept.id} className="bg-white p-4 rounded-lg border border-[#e2e2e2] hover:border-[#C5A059] transition-colors">
-                    <h4 className="text-xs font-bold text-[#031632] flex items-center justify-between">
-                      <span>{isEn ? (dept.nameEn || dept.name) : dept.name}</span>
-                      <span className="text-[10px] text-[#C5A059] uppercase font-semibold">Direct</span>
-                    </h4>
-                    <p className="text-[11px] text-[#44474d] mt-1 mb-2">
-                      {isEn ? (dept.descEn || dept.desc) : dept.desc}
-                    </p>
-                    <a
-                      href={`mailto:${dept.email}`}
-                      className="text-xs text-[#031632] hover:text-[#C5A059] font-medium flex items-center gap-1.5"
+                {departments.map((dept: any, index: number) => {
+                  const palette = getDeptPalette(dept.id, index);
+                  return (
+                    <div
+                      key={dept.id}
+                      className={`${palette.bg} p-4 rounded-xl border-2 ${palette.border} ${palette.hoverBorder} shadow-xs hover:shadow-md transition-all duration-200`}
                     >
-                      <Mail className="w-3.5 h-3.5 text-[#C5A059]" />
-                      <span>{dept.email}</span>
-                    </a>
-                  </div>
-                ))}
+                      <h4 className="text-xs font-bold text-[#031632] flex items-center justify-between">
+                        <span>{isEn ? (dept.nameEn || dept.name) : dept.name}</span>
+                        <span className={`text-[10px] ${palette.badge} border uppercase font-bold px-2 py-0.5 rounded shadow-2xs`}>
+                          Direct
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-800 font-medium mt-1 mb-2 leading-relaxed">
+                        {isEn ? (dept.descEn || dept.desc) : dept.desc}
+                      </p>
+                      <a
+                        href={`mailto:${dept.email}`}
+                        className={`text-xs ${palette.text} font-bold hover:underline flex items-center gap-1.5`}
+                      >
+                        <Mail className="w-3.5 h-3.5 text-[#031632]" />
+                        <span>{dept.email}</span>
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Access & Transports */}
-            <div className="bg-white rounded-xl border border-[#e2e2e2] p-6 space-y-4 shadow-sm">
+            <div className="bg-gradient-to-br from-indigo-100 via-sky-100 to-violet-100 rounded-2xl border-2 border-indigo-300 p-6 space-y-4 shadow-sm hover:shadow-md transition-shadow">
               <h3 className="font-playfair text-lg font-bold text-[#031632] flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-[#C5A059]" />
+                <Building2 className="w-4 h-4 text-indigo-800" />
                 {isEn ? 'Access & Transport' : 'Accès & Transports'}
               </h3>
-              <div className="text-xs text-[#44474d] space-y-2 leading-relaxed">
+              <div className="text-xs text-slate-800 space-y-2 leading-relaxed font-medium">
                 <p>
-                  <strong>{isEn ? 'Metro:' : 'Métro :'}</strong> Madeleine ({isEn ? 'Lines' : 'Lignes'} 8, 12, 14) {isEn ? 'or' : 'ou'} Concorde ({isEn ? 'Lines' : 'Lignes'} 1, 8, 12).
+                  <strong className="text-indigo-950">{isEn ? 'Metro:' : 'Métro :'}</strong> Madeleine ({isEn ? 'Lines' : 'Lignes'} 8, 12, 14) {isEn ? 'or' : 'ou'} Concorde ({isEn ? 'Lines' : 'Lignes'} 1, 8, 12).
                 </p>
                 <p>
-                  <strong>{isEn ? 'RATP Bus:' : 'Bus RATP :'}</strong> {isEn ? 'Lines' : 'Lignes'} 24, 42, 52, 72, 73, 84, 94.
+                  <strong className="text-indigo-950">{isEn ? 'RATP Bus:' : 'Bus RATP :'}</strong> {isEn ? 'Lines' : 'Lignes'} 24, 42, 52, 72, 73, 84, 94.
                 </p>
                 <p>
-                  <strong>{isEn ? 'Public Parking:' : 'Parking public :'}</strong> Parking Indigo Madeleine-Tronchet ({isEn ? '150m away' : 'à 150m'}).
+                  <strong className="text-indigo-950">{isEn ? 'Public Parking:' : 'Parking public :'}</strong> Parking Indigo Madeleine-Tronchet ({isEn ? '150m away' : 'à 150m'}).
                 </p>
                 <p>
-                  <strong>{isEn ? 'Disability Access:' : 'Accessibilité PMR :'}</strong> {isEn ? 'Access ramp and elevator serving hearing and conference rooms.' : 'Rampe d\'accès et ascenseur desservant les salles d\'audience et de conférence.'}
+                  <strong className="text-indigo-950">{isEn ? 'Disability Access:' : 'Accessibilité PMR :'}</strong> {isEn ? 'Access ramp and elevator serving hearing and conference rooms.' : 'Rampe d\'accès et ascenseur desservant les salles d\'audience et de conférence.'}
                 </p>
               </div>
             </div>

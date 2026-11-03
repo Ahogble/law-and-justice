@@ -158,7 +158,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       <div className="text-xs font-semibold text-[#031632] group-hover:text-[#C5A059] transition-colors">
                         {m.name}
                       </div>
-                      <div className="text-[11px] text-[#75777e]">{m.role} • {m.organization}</div>
+                      <div className="text-[11px] text-[#75777e]">
+                        <span className="font-medium text-slate-800">{m.profession || m.role}</span>
+                        {m.city && <span> • {m.city}</span>}
+                        {m.organization && <span> • {m.organization}</span>}
+                      </div>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform shrink-0 ml-3" />
                   </div>

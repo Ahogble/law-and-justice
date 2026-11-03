@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Mail, BookOpen, X, Award, Tag } from 'lucide-react';
+import { Search, Mail, BookOpen, X, Award, Tag, MapPin, Briefcase } from 'lucide-react';
 import { Member, MemberCategory } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -75,13 +75,78 @@ const MEMBER_TRANSLATIONS: Record<string, {
 };
 
 const COLOR_PALETTES = [
-  { bg: 'bg-amber-50/50', border: 'border-amber-200', text: 'text-amber-700', hoverBorder: 'group-hover:border-amber-400', tag: 'bg-amber-100/50 text-amber-800', hoverText: 'group-hover:text-amber-700' },
-  { bg: 'bg-blue-50/50', border: 'border-blue-200', text: 'text-blue-700', hoverBorder: 'group-hover:border-blue-400', tag: 'bg-blue-100/50 text-blue-800', hoverText: 'group-hover:text-blue-700' },
-  { bg: 'bg-emerald-50/50', border: 'border-emerald-200', text: 'text-emerald-700', hoverBorder: 'group-hover:border-emerald-400', tag: 'bg-emerald-100/50 text-emerald-800', hoverText: 'group-hover:text-emerald-700' },
-  { bg: 'bg-fuchsia-50/50', border: 'border-fuchsia-200', text: 'text-fuchsia-700', hoverBorder: 'group-hover:border-fuchsia-400', tag: 'bg-fuchsia-100/50 text-fuchsia-800', hoverText: 'group-hover:text-fuchsia-700' },
-  { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', hoverBorder: 'group-hover:border-slate-400', tag: 'bg-slate-100/70 text-slate-800', hoverText: 'group-hover:text-slate-700' },
-  { bg: 'bg-rose-50/50', border: 'border-rose-200', text: 'text-rose-700', hoverBorder: 'group-hover:border-rose-400', tag: 'bg-rose-100/50 text-rose-800', hoverText: 'group-hover:text-rose-700' },
-  { bg: 'bg-indigo-50/50', border: 'border-indigo-200', text: 'text-indigo-700', hoverBorder: 'group-hover:border-indigo-400', tag: 'bg-indigo-100/50 text-indigo-800', hoverText: 'group-hover:text-indigo-700' },
+  // 0: Conseil d'Administration (Or / Ambre vif)
+  {
+    bg: 'bg-gradient-to-br from-amber-200 via-amber-100 to-yellow-200',
+    border: 'border-amber-300',
+    text: 'text-amber-900',
+    hoverBorder: 'group-hover:border-amber-500',
+    tag: 'bg-white/90 text-amber-950 border border-amber-300 shadow-2xs',
+    hoverText: 'group-hover:text-amber-950',
+  },
+  // 1: Universitaire (Bleu azur vif)
+  {
+    bg: 'bg-gradient-to-br from-blue-200 via-sky-100 to-blue-200',
+    border: 'border-blue-300',
+    text: 'text-blue-900',
+    hoverBorder: 'group-hover:border-blue-500',
+    tag: 'bg-white/90 text-blue-950 border border-blue-300 shadow-2xs',
+    hoverText: 'group-hover:text-blue-950',
+  },
+  // 2: Magistrat (Émeraude / Vert jade vif)
+  {
+    bg: 'bg-gradient-to-br from-emerald-200 via-teal-100 to-emerald-200',
+    border: 'border-emerald-300',
+    text: 'text-emerald-900',
+    hoverBorder: 'group-hover:border-emerald-500',
+    tag: 'bg-white/90 text-emerald-950 border border-emerald-300 shadow-2xs',
+    hoverText: 'group-hover:text-emerald-950',
+  },
+  // 3: Avocat (Pourpre / Fuchsia vif)
+  {
+    bg: 'bg-gradient-to-br from-fuchsia-200 via-purple-100 to-pink-200',
+    border: 'border-fuchsia-300',
+    text: 'text-fuchsia-900',
+    hoverBorder: 'group-hover:border-fuchsia-500',
+    tag: 'bg-white/90 text-fuchsia-950 border border-fuchsia-300 shadow-2xs',
+    hoverText: 'group-hover:text-fuchsia-950',
+  },
+  // 4: Juriste d'Entreprise (Corail / Mandarine vif)
+  {
+    bg: 'bg-gradient-to-br from-orange-200 via-rose-100 to-amber-200',
+    border: 'border-orange-300',
+    text: 'text-orange-950',
+    hoverBorder: 'group-hover:border-orange-500',
+    tag: 'bg-white/90 text-orange-950 border border-orange-300 shadow-2xs',
+    hoverText: 'group-hover:text-orange-950',
+  },
+  // 5: Rose vif
+  {
+    bg: 'bg-gradient-to-br from-rose-200 via-pink-100 to-rose-200',
+    border: 'border-rose-300',
+    text: 'text-rose-900',
+    hoverBorder: 'group-hover:border-rose-500',
+    tag: 'bg-white/90 text-rose-950 border border-rose-300 shadow-2xs',
+    hoverText: 'group-hover:text-rose-950',
+  },
+  // 6: Indigo / Violet royal vif
+  {
+    bg: 'bg-gradient-to-br from-indigo-200 via-sky-100 to-violet-200',
+    border: 'border-indigo-300',
+    text: 'text-indigo-900',
+    hoverBorder: 'group-hover:border-indigo-500',
+    tag: 'bg-white/90 text-indigo-950 border border-indigo-300 shadow-2xs',
+    hoverText: 'group-hover:text-indigo-950',
+  },
+  // 7: Cyan / Turquoise vif
+  {
+    bg: 'bg-gradient-to-br from-cyan-200 via-teal-100 to-cyan-200',
+    border: 'border-cyan-300',
+    text: 'text-cyan-900',
+    hoverBorder: 'group-hover:border-cyan-500',
+    tag: 'bg-white/90 text-cyan-950 border border-cyan-300 shadow-2xs',
+    hoverText: 'group-hover:text-cyan-950',
+  },
 ];
 
 const getCategoryPalette = (categoryName: string) => {
@@ -131,24 +196,34 @@ export const MembersView: React.FC<MembersViewProps> = ({
     const matchesSubcat = selectedSubcategoryKey === 'Tous' || member.subcategory === selectedSubcategoryKey;
     const extra = MEMBER_TRANSLATIONS[member.id];
     
-    const nameMatch = member.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const roleMatch = (isEn && extra ? extra.roleEn : member.role).toLowerCase().includes(searchQuery.toLowerCase());
-    const orgMatch = (isEn && extra ? extra.orgEn : member.organization).toLowerCase().includes(searchQuery.toLowerCase());
+    const nameMatch = (member.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const roleMatch = (isEn && extra ? extra.roleEn : (member.role || '')).toLowerCase().includes(searchQuery.toLowerCase());
+    const professionMatch = (member.profession || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const cityMatch = (member.city || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const orgMatch = (isEn && extra ? extra.orgEn : (member.organization || '')).toLowerCase().includes(searchQuery.toLowerCase());
     const specList = isEn && extra ? extra.specialtiesEn : (member.specialties || []);
     const specMatch = specList.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesCat && matchesSubcat && (nameMatch || roleMatch || orgMatch || specMatch);
+    return matchesCat && matchesSubcat && (nameMatch || roleMatch || professionMatch || cityMatch || orgMatch || specMatch);
   });
 
   const getMemberData = (member: Member) => {
     const extra = MEMBER_TRANSLATIONS[member.id];
-    const catEntry = CATEGORY_MAP[member.category];
+    const profession = member.profession || member.role || (isEn ? 'Legal Practitioner' : 'Praticien du Droit');
+    const city = member.city || 'Paris';
+    const avatar = member.avatar_url || member.avatarUrl || '';
+    const joinedYear = member.joined_year || member.joinedYear || 2024;
+
     return {
-      role: isEn && extra ? extra.roleEn : member.role,
-      organization: isEn && extra ? extra.orgEn : member.organization,
+      role: isEn && extra ? extra.roleEn : (member.role || profession),
+      profession: profession,
+      city: city,
+      avatarUrl: avatar,
+      joinedYear: joinedYear,
+      organization: isEn && extra ? extra.orgEn : (member.organization || ''),
       category: isEn ? (CATEGORY_MAP[member.category]?.en || member.category) : member.category,
       subcategoryLabel: getSubcatDisplayLabel(member.category, member.subcategory),
-      bio: isEn && extra ? extra.bioEn : member.bio,
+      bio: isEn && extra ? extra.bioEn : (member.bio || ''),
       specialties: isEn && extra ? extra.specialtiesEn : (member.specialties || [])
     };
   };
@@ -274,29 +349,51 @@ export const MembersView: React.FC<MembersViewProps> = ({
                 <div
                   key={member.id}
                   onClick={() => setSelectedMember(member)}
-                  className={`rounded-xl border p-6 ambient-shadow-hover flex flex-col justify-between cursor-pointer group transition-all duration-300 ${palette.bg} ${palette.border} hover:shadow-md ${palette.hoverBorder}`}
+                  className={`rounded-2xl border-2 p-6 flex flex-col justify-between cursor-pointer group transition-all duration-300 shadow-xs hover:shadow-xl hover:-translate-y-1 ${palette.bg} ${palette.border} ${palette.hoverBorder}`}
                 >
                   <div>
                     <div className="flex items-start gap-4 mb-4">
-                      <img
-                        src={member.avatarUrl}
-                        alt={member.name}
-                        className={`w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm transition-colors ${palette.hoverBorder}`}
-                      />
+                      {mData.avatarUrl ? (
+                        <img
+                          src={mData.avatarUrl}
+                          alt={member.name}
+                          className={`w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0 transition-colors ${palette.hoverBorder}`}
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                            const sibling = (e.target as HTMLElement).nextElementSibling;
+                            if (sibling) (sibling as HTMLElement).style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`w-16 h-16 rounded-full border-2 border-white shadow-sm flex items-center justify-center font-bold text-sm bg-gradient-to-br from-[#031632] to-[#1A2B48] text-[#C5A059] shrink-0 ${
+                          mData.avatarUrl ? 'hidden' : 'flex'
+                        }`}
+                      >
+                        {member.name.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1.5 ${palette.text}`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1 ${palette.text}`}>
                           {mData.category} {mData.subcategoryLabel ? `• ${mData.subcategoryLabel}` : ''}
                         </span>
                         <h3 className={`font-playfair text-lg font-bold text-[#031632] truncate transition-colors ${palette.hoverText}`}>
                           {member.name}
                         </h3>
-                        <p className="text-xs text-slate-600 truncate font-medium mt-0.5">
-                          {mData.organization}
-                        </p>
+                        <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5 mt-0.5 truncate">
+                          <Briefcase className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                          <span className="truncate">{mData.profession}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-700 font-medium flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin className="w-3 h-3 text-slate-600 shrink-0" />
+                          <span className="font-bold text-slate-800">{mData.city}</span>
+                          {mData.organization && (
+                            <span className="text-slate-700 truncate">• {mData.organization}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-slate-700 line-clamp-3 mb-4 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-800 line-clamp-3 mb-4 leading-relaxed">
                       {mData.bio}
                     </p>
 
@@ -304,7 +401,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       {mData.specialties.map((spec, i) => (
                         <span
                           key={i}
-                          className={`text-[10px] font-semibold px-2 py-1 rounded-md ${palette.tag}`}
+                          className={`text-[10px] font-semibold px-2.5 py-1 rounded-md ${palette.tag}`}
                         >
                           {spec}
                         </span>
@@ -312,9 +409,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-black/5 flex items-center justify-between text-xs text-slate-500 font-medium">
-                    <span>{isEn ? `Member since ${member.joinedYear}` : `Membre depuis ${member.joinedYear}`}</span>
-                    <span className={`font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1 ${palette.text}`}>
+                  <div className="pt-4 border-t border-black/10 flex items-center justify-between text-xs text-slate-700 font-medium">
+                    <span>{isEn ? `Member since ${mData.joinedYear}` : `Membre depuis ${mData.joinedYear}`}</span>
+                    <span className={`font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1 ${palette.text}`}>
                       {isEn ? 'View profile →' : 'Consulter la fiche →'}
                     </span>
                   </div>
@@ -381,11 +478,25 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   <X className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-5">
-                  <img
-                    src={selectedMember.avatarUrl}
-                    alt={selectedMember.name}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-[#C5A059]"
-                  />
+                  {mData.avatarUrl ? (
+                    <img
+                      src={mData.avatarUrl}
+                      alt={selectedMember.name}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-[#C5A059] shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                        const sibling = (e.target as HTMLElement).nextElementSibling;
+                        if (sibling) (sibling as HTMLElement).style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`w-20 h-20 rounded-full border-2 border-[#C5A059] flex items-center justify-center font-bold text-xl bg-gradient-to-br from-[#031632] to-[#1A2B48] text-[#C5A059] shrink-0 ${
+                      mData.avatarUrl ? 'hidden' : 'flex'
+                    }`}
+                  >
+                    {selectedMember.name.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                  </div>
                   <div>
                     <span className="text-xs font-semibold text-[#C5A059] uppercase tracking-widest block mb-1">
                       {mData.category} {mData.subcategoryLabel ? `• ${mData.subcategoryLabel}` : ''}
@@ -393,12 +504,21 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     <h3 className="font-playfair text-2xl font-bold text-white">
                       {selectedMember.name}
                     </h3>
-                    <p className="text-xs text-[#8293b5] mt-1">
-                      {mData.role}
-                    </p>
-                    <p className="text-xs text-white/70">
-                      {mData.organization}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs">
+                      <span className="font-semibold text-white flex items-center gap-1">
+                        <Briefcase className="w-3.5 h-3.5 text-[#C5A059]" />
+                        {mData.profession}
+                      </span>
+                      <span className="flex items-center gap-1 text-[#C5A059] font-medium">
+                        <MapPin className="w-3.5 h-3.5" />
+                        {mData.city}
+                      </span>
+                    </div>
+                    {mData.organization && (
+                      <p className="text-xs text-white/70 mt-1">
+                        {mData.organization}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -447,7 +567,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     <div>
                       <div className="text-xs text-[#75777e]">{isEn ? 'Seniority' : 'Ancienneté'}</div>
                       <div className="text-sm font-bold text-[#031632]">
-                        {isEn ? `Since ${selectedMember.joinedYear}` : `Depuis ${selectedMember.joinedYear}`}
+                        {isEn ? `Since ${mData.joinedYear}` : `Depuis ${mData.joinedYear}`}
                       </div>
                     </div>
                   </div>
