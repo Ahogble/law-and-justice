@@ -9,8 +9,15 @@ import { DisputesManager } from './components/DisputesManager';
 import SettingsManager from './components/SettingsManager';
 import ContactManager from './components/ContactManager';
 import MembershipTiersManager from './components/MembershipTiersManager';
+import MembershipApplicationsManager from './components/MembershipApplicationsManager';
+import PaymentAccountsManager from './components/PaymentAccountsManager';
+import { MemberCasesModal } from './components/MemberCasesModal';
+import { MemberAffectationModal } from './components/MemberAffectationModal';
+import MemberProfileView from './components/MemberProfileView';
+import { MemberAssociativeLifeView } from './components/MemberAssociativeLifeView';
 import {
   Shield,
+  CreditCard,
   LogOut,
   FileText,
   Users,
@@ -46,7 +53,8 @@ import {
   X,
   Upload,
   AlertTriangle,
-  Building2
+  Building2,
+  Sparkles
 } from 'lucide-react';
 import { MemberCategory, MemberSubcategory } from '../../types';
 
@@ -65,6 +73,9 @@ const FALLBACK_CATEGORIES: MemberCategory[] = [
 interface Props {
   articles: any[];
   members: any[];
+  applications?: any[];
+  memberCases?: any[];
+  memberAssociativeActivities?: any[];
   projects: any[];
   activities: any[];
   legalTexts: any[];
@@ -73,6 +84,7 @@ interface Props {
   disputeStages?: any[];
   memberCategories?: MemberCategory[];
   membershipTiers?: any[];
+  paymentAccounts?: any[];
   articleCategories?: any[];
   contactConfig?: { departments: any[]; faqs: any[] };
   settings: {
@@ -124,6 +136,9 @@ const DEFAULT_DISPUTE_STAGES_FALLBACK = [
 export default function Dashboard({
   articles = [],
   members = [],
+  applications = [],
+  memberCases = [],
+  memberAssociativeActivities = [],
   projects = [],
   activities = [],
   legalTexts = [],
@@ -132,6 +147,7 @@ export default function Dashboard({
   disputeStages = [],
   memberCategories = [],
   membershipTiers = [],
+  paymentAccounts = [],
   articleCategories = [],
   contactConfig = { departments: [], faqs: [] },
   settings
@@ -146,10 +162,106 @@ export default function Dashboard({
   const [articleSubTab, setArticleSubTab] = useState<'list' | 'categories'>('list');
   const [isArticlesMenuOpen, setIsArticlesMenuOpen] = useState(true);
 
-  const [memberSubTab, setMemberSubTab] = useState<'list' | 'categories' | 'subcategories' | 'tiers'>('list');
+  const [memberSubTab, setMemberSubTab] = useState<'list' | 'applications' | 'cases' | 'associative_life' | 'categories' | 'subcategories' | 'tiers' | 'payment_accounts'>('list');
   const [isMembersMenuOpen, setIsMembersMenuOpen] = useState(true);
   const [disputeSubTab, setDisputeSubTab] = useState<'officers' | 'cases' | 'stages'>('officers');
   const [isDisputesMenuOpen, setIsDisputesMenuOpen] = useState(true);
+
+  // Member cases modal state
+  const [memberCasesModalOpen, setMemberCasesModalOpen] = useState(false);
+  const [activeMemberForCases, setActiveMemberForCases] = useState<any | null>(null);
+  const [activeAppForCases, setActiveAppForCases] = useState<any | null>(null);
+
+  const handleOpenMemberCasesFromApp = (app: any) => {
+    const linkedMember = app.member_id ? members.find((m: any) => m.id === app.member_id) : null;
+    setActiveMemberForCases(linkedMember || null);
+    setActiveAppForCases(app);
+    setMemberCasesModalOpen(true);
+  };
+
+  const handleOpenMemberCasesFromMember = (mem: any) => {
+    const linkedApp = applications.find((a: any) => a.member_id === mem.id);
+    setActiveMemberForCases(mem);
+    setActiveAppForCases(linkedApp || null);
+    setMemberCasesModalOpen(true);
+  };
+
+  // Member affectation & agrément modal state
+  const [memberAffectationModalOpen, setMemberAffectationModalOpen] = useState(false);
+  const [activeMemberForAffectation, setActiveMemberForAffectation] = useState<any | null>(null);
+  const [activeAppForAffectation, setActiveAppForAffectation] = useState<any | null>(null);
+
+  const handleOpenMemberAffectationFromApp = (app: any) => {
+    const linkedMember = app.member_id ? members.find((m: any) => m.id === app.member_id) : null;
+    setActiveMemberForAffectation(linkedMember || null);
+    setActiveAppForAffectation(app);
+    setMemberAffectationModalOpen(true);
+  };
+
+  const handleOpenMemberAffectationFromMember = (mem: any) => {
+    const linkedApp = applications.find((a: any) => a.member_id === mem.id);
+    setActiveMemberForAffectation(mem);
+    setActiveAppForAffectation(linkedApp || null);
+    setMemberAffectationModalOpen(true);
+  };
+
+  // Member profile view state
+  const [selectedMemberProfileAppId, setSelectedMemberProfileAppId] = useState<string | number | null>(null);
+  const [selectedMemberProfileMemId, setSelectedMemberProfileMemId] = useState<string | number | null>(null);
+
+  const resolvedProfileApp = selectedMemberProfileAppId
+    ? applications.find((a: any) => a.id === selectedMemberProfileAppId)
+    : (selectedMemberProfileMemId ? applications.find((a: any) => a.member_id === selectedMemberProfileMemId) : null);
+
+  const resolvedProfileMem = selectedMemberProfileMemId
+    ? members.find((m: any) => m.id === selectedMemberProfileMemId)
+    : (resolvedProfileApp?.member_id ? members.find((m: any) => m.id === resolvedProfileApp.member_id) : null);
+
+  const handleOpenMemberProfileFromApp = (app: any) => {
+    setSelectedMemberProfileAppId(app.id);
+    setSelectedMemberProfileMemId(app.member_id || null);
+  };
+
+  const handleOpenMemberProfileFromMember = (mem: any) => {
+    setSelectedMemberProfileMemId(mem.id);
+    const linkedApp = applications.find((a: any) => a.member_id === mem.id);
+    setSelectedMemberProfileAppId(linkedApp?.id || null);
+  };
+
+  const handleCloseMemberProfile = () => {
+    setSelectedMemberProfileAppId(null);
+    setSelectedMemberProfileMemId(null);
+  };
+
+  // Member associative life state (Dedicated page per member)
+  const [selectedAssociativeAppId, setSelectedAssociativeAppId] = useState<string | number | null>(null);
+  const [selectedAssociativeMemId, setSelectedAssociativeMemId] = useState<string | number | null>(null);
+
+  const resolvedAssociativeApp = selectedAssociativeAppId
+    ? applications.find((a: any) => a.id === selectedAssociativeAppId)
+    : (selectedAssociativeMemId ? applications.find((a: any) => a.member_id === selectedAssociativeMemId) : null);
+
+  const resolvedAssociativeMem = selectedAssociativeMemId
+    ? members.find((m: any) => m.id === selectedAssociativeMemId)
+    : (resolvedAssociativeApp?.member_id ? members.find((m: any) => m.id === resolvedAssociativeApp.member_id) : null);
+
+  const handleOpenAssociativeLifeFromApp = (app: any) => {
+    setSelectedAssociativeAppId(app.id);
+    setSelectedAssociativeMemId(app.member_id || null);
+  };
+
+  const handleOpenAssociativeLifeFromMember = (mem: any) => {
+    setSelectedAssociativeMemId(mem.id);
+    const linkedApp = applications.find((a: any) => a.member_id === mem.id);
+    setSelectedAssociativeAppId(linkedApp?.id || null);
+  };
+
+  const handleCloseAssociativeLife = () => {
+    setSelectedAssociativeAppId(null);
+    setSelectedAssociativeMemId(null);
+  };
+
+  const pendingApplicationsCount = applications.filter((a: any) => a.status === 'pending').length;
 
   // Officers Search, Filter & Sorting state
   const [officerSearchQuery, setOfficerSearchQuery] = useState('');
@@ -408,7 +520,7 @@ export default function Dashboard({
 
   const saveCategoryStructure = (newList: MemberCategory[]) => {
     setCategoriesList(newList);
-    router.post('/admin/member-categories', { categories: newList });
+    router.post('/admin/member-categories', { categories: newList as any });
   };
 
   const handleAddCategory = (e: React.FormEvent) => {
@@ -866,6 +978,11 @@ export default function Dashboard({
                 <span>Membres</span>
               </div>
               <div className="flex items-center gap-2">
+                {pendingApplicationsCount > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-bold animate-pulse" title={`${pendingApplicationsCount} candidature(s) en attente`}>
+                    {pendingApplicationsCount}
+                  </span>
+                )}
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-amber-800 font-bold border border-amber-300/50">
                   {members.length + categoriesList.length}
                 </span>
@@ -883,6 +1000,7 @@ export default function Dashboard({
                   onClick={() => {
                     setActiveTab('members');
                     setMemberSubTab('list');
+                    handleCloseMemberProfile();
                     setIsEditing(false);
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
@@ -899,7 +1017,80 @@ export default function Dashboard({
                 <button
                   onClick={() => {
                     setActiveTab('members');
+                    setMemberSubTab('applications');
+                    handleCloseMemberProfile();
+                    setIsEditing(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'members' && memberSubTab === 'applications'
+                      ? 'bg-amber-500 text-white font-bold shadow-md shadow-amber-500/20'
+                      : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Candidatures</span>
+                  {pendingApplicationsCount > 0 ? (
+                    <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      activeTab === 'members' && memberSubTab === 'applications'
+                        ? 'bg-amber-700 text-white'
+                        : 'bg-amber-500 text-white animate-pulse'
+                    }`}>
+                      {pendingApplicationsCount}
+                    </span>
+                  ) : (
+                    <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      activeTab === 'members' && memberSubTab === 'applications'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {applications.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('members');
+                    setMemberSubTab('cases');
+                    handleCloseMemberProfile();
+                    handleCloseAssociativeLife();
+                    setIsEditing(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'members' && memberSubTab === 'cases'
+                      ? 'bg-amber-500 text-white font-bold shadow-md shadow-amber-500/20'
+                      : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                  }`}
+                >
+                  <Briefcase className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Fiches &amp; Affaires</span>
+                  <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === 'members' && memberSubTab === 'cases' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>{memberCases.length}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('members');
+                    setMemberSubTab('associative_life');
+                    handleCloseMemberProfile();
+                    handleCloseAssociativeLife();
+                    setIsEditing(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'members' && memberSubTab === 'associative_life'
+                      ? 'bg-amber-500 text-white font-bold shadow-md shadow-amber-500/20'
+                      : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                  <span className="truncate">Vie Associative</span>
+                  <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === 'members' && memberSubTab === 'associative_life' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>{memberAssociativeActivities.length}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('members');
                     setMemberSubTab('categories');
+                    handleCloseMemberProfile();
                     setIsEditing(false);
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
@@ -917,6 +1108,7 @@ export default function Dashboard({
                   onClick={() => {
                     setActiveTab('members');
                     setMemberSubTab('subcategories');
+                    handleCloseMemberProfile();
                     setIsEditing(false);
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
@@ -945,6 +1137,22 @@ export default function Dashboard({
                   <Award className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Statuts & Tarification</span>
                   <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === 'members' && memberSubTab === 'tiers' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>{membershipTiersState.length}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('members');
+                    setMemberSubTab('payment_accounts');
+                    setIsEditing(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'members' && memberSubTab === 'payment_accounts'
+                      ? 'bg-amber-500 text-white font-bold shadow-md shadow-amber-500/20'
+                      : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                  }`}
+                >
+                  <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Comptes de Versement</span>
                 </button>
               </div>
             )}
@@ -1187,31 +1395,446 @@ export default function Dashboard({
           )}
 
           {/* TAB 2: MEMBERS */}
-          {activeTab === 'members' && memberSubTab !== 'tiers' && (
-            <MembersManager
-              memberSubTab={memberSubTab}
-              members={members}
-              categoriesList={categoriesList}
-              memberForm={memberForm}
-              setMemberForm={setMemberForm}
-              isEditing={isEditing}
-              setIsEditing={setIsEditing}
-              handleSaveMember={handleSaveMember}
-              handleDeleteMember={handleDeleteMember}
-              newCatName={newCatName}
-              setNewCatName={setNewCatName}
-              newCatNameEn={newCatNameEn}
-              setNewCatNameEn={setNewCatNameEn}
-              handleAddCategory={handleAddCategory}
-              handleDeleteCategory={handleDeleteCategory}
-              subcategorySearchQuery={subcategorySearchQuery}
-              setSubcategorySearchQuery={setSubcategorySearchQuery}
-              filteredSubcategoriesList={filteredSubcategoriesList}
-              handleAddSubcategory={handleAddSubcategory}
-              handleDeleteSubcategory={handleDeleteSubcategory}
-              subcatInputs={subcatInputs}
-              setSubcatInputs={setSubcatInputs}
-            />
+          {activeTab === 'members' && (memberSubTab === 'list' || memberSubTab === 'categories' || memberSubTab === 'subcategories') && (
+            (resolvedAssociativeApp || resolvedAssociativeMem) && memberSubTab === 'list' ? (
+              <MemberAssociativeLifeView
+                application={resolvedAssociativeApp}
+                member={resolvedAssociativeMem}
+                allAssociativeActivities={memberAssociativeActivities}
+                onBack={handleCloseAssociativeLife}
+                requestConfirmation={requestConfirmation}
+              />
+            ) : (resolvedProfileApp || resolvedProfileMem) && memberSubTab === 'list' ? (
+              <MemberProfileView
+                application={resolvedProfileApp}
+                member={resolvedProfileMem}
+                allMembers={members}
+                categoriesList={categoriesList}
+                onBack={handleCloseMemberProfile}
+                onOpenAffectationModal={handleOpenMemberAffectationFromMember}
+                onOpenMemberCases={handleOpenMemberCasesFromMember}
+                onOpenAssociativeLife={handleOpenAssociativeLifeFromMember}
+                requestConfirmation={requestConfirmation}
+              />
+            ) : (
+              <MembersManager
+                memberSubTab={memberSubTab}
+                members={members}
+                categoriesList={categoriesList}
+                memberForm={memberForm}
+                setMemberForm={setMemberForm}
+                isEditing={isEditing}
+                setIsEditing={setIsEditing}
+                handleSaveMember={handleSaveMember}
+                handleDeleteMember={handleDeleteMember}
+                newCatName={newCatName}
+                setNewCatName={setNewCatName}
+                newCatNameEn={newCatNameEn}
+                setNewCatNameEn={setNewCatNameEn}
+                handleAddCategory={handleAddCategory}
+                handleDeleteCategory={handleDeleteCategory}
+                subcategorySearchQuery={subcategorySearchQuery}
+                setSubcategorySearchQuery={setSubcategorySearchQuery}
+                filteredSubcategoriesList={filteredSubcategoriesList}
+                handleAddSubcategory={handleAddSubcategory}
+                handleDeleteSubcategory={handleDeleteSubcategory}
+                subcatInputs={subcatInputs}
+                setSubcatInputs={setSubcatInputs}
+                onOpenMemberCases={handleOpenMemberCasesFromMember}
+                onOpenMemberAffectation={handleOpenMemberAffectationFromMember}
+                onOpenMemberProfile={handleOpenMemberProfileFromMember}
+                onOpenAssociativeLife={handleOpenAssociativeLifeFromMember}
+              />
+            )
+          )}
+
+          {activeTab === 'members' && memberSubTab === 'applications' && (
+            (resolvedAssociativeApp || resolvedAssociativeMem) ? (
+              <MemberAssociativeLifeView
+                application={resolvedAssociativeApp}
+                member={resolvedAssociativeMem}
+                allAssociativeActivities={memberAssociativeActivities}
+                onBack={handleCloseAssociativeLife}
+                requestConfirmation={requestConfirmation}
+              />
+            ) : (resolvedProfileApp || resolvedProfileMem) ? (
+              <MemberProfileView
+                application={resolvedProfileApp}
+                member={resolvedProfileMem}
+                allMembers={members}
+                categoriesList={categoriesList}
+                onBack={handleCloseMemberProfile}
+                onOpenAffectationModal={handleOpenMemberAffectationFromApp}
+                onOpenMemberCases={handleOpenMemberCasesFromApp}
+                onOpenAssociativeLife={handleOpenAssociativeLifeFromApp}
+                requestConfirmation={requestConfirmation}
+              />
+            ) : (
+              <MembershipApplicationsManager
+                applications={applications}
+                categoriesList={categoriesList}
+                requestConfirmation={requestConfirmation}
+                onOpenMemberCases={handleOpenMemberCasesFromApp}
+                onOpenMemberAffectation={handleOpenMemberAffectationFromApp}
+                onOpenMemberProfile={handleOpenMemberProfileFromApp}
+                onOpenAssociativeLife={handleOpenAssociativeLifeFromApp}
+              />
+            )
+          )}
+
+          {/* TAB 2: MEMBERS - CASES OVERVIEW */}
+          {activeTab === 'members' && memberSubTab === 'cases' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                <div>
+                  <h2 className="text-xl font-serif font-bold text-slate-900 flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-amber-600" />
+                    <span>Fiches des Membres &amp; Gestion des Affaires</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Consultez les dossiers contentieux de chaque membre adhérent, fixez les renvois d'audience et gérez les pièces jointes.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {members.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setActiveMemberForCases(members[0]);
+                        setActiveAppForCases(null);
+                        setMemberCasesModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl flex items-center gap-2 cursor-pointer shadow-md shadow-amber-500/20"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Ouvrir une Fiche Membre</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Members Quick Cards Grid */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Sélectionnez un membre pour accéder à sa fiche et ses affaires :</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {members.map((mem: any) => {
+                    const memCaseCount = mem.cases ? mem.cases.length : (memberCases.filter((c: any) => c.member_id === mem.id).length);
+                    const renvoyeeCount = (mem.cases || []).filter((c: any) => c.status === 'renvoyee').length;
+                    return (
+                      <div
+                        key={mem.id}
+                        onClick={() => handleOpenMemberCasesFromMember(mem)}
+                        className="p-4 bg-slate-50/80 hover:bg-white border border-slate-200 hover:border-amber-400 rounded-xl cursor-pointer transition-all hover:shadow-md group flex items-start gap-3"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 font-bold flex items-center justify-center border border-amber-300 shrink-0 text-sm">
+                          {mem.avatar_url ? (
+                            <img src={mem.avatar_url} alt={mem.name} className="w-full h-full object-cover rounded-xl" />
+                          ) : (
+                            mem.name?.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-sm text-slate-900 group-hover:text-amber-700 transition-colors truncate">
+                            {mem.name}
+                          </h4>
+                          <p className="text-xs text-slate-500 truncate">{mem.role || 'Membre Adhérent'}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                              {memCaseCount} affaire{memCaseCount > 1 ? 's' : ''}
+                            </span>
+                            {renvoyeeCount > 0 && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300">
+                                {renvoyeeCount} renvoyée{renvoyeeCount > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 transition-colors shrink-0 mt-1" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* All cases table summary */}
+              <div className="pt-4 space-y-3">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Briefcase className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Dernières affaires enregistrées dans l'association :</span>
+                </h3>
+
+                {memberCases.length === 0 ? (
+                  <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-8 text-center text-xs text-slate-500">
+                    Aucune affaire enregistrée pour le moment. Cliquez sur un membre ci-dessus ou sur une candidature validée pour ouvrir sa fiche et créer une affaire.
+                  </div>
+                ) : (
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                          <th className="py-2.5 px-3">Réf. Affaire</th>
+                          <th className="py-2.5 px-3">Membre Concerné</th>
+                          <th className="py-2.5 px-3">Objet &amp; Juridiction</th>
+                          <th className="py-2.5 px-3">Statut &amp; Audience</th>
+                          <th className="py-2.5 px-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {memberCases.map((c: any) => {
+                          const linkedMem = members.find((m: any) => m.id === c.member_id) || c.member;
+                          return (
+                            <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-3 px-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                                <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                  {c.case_number}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="font-semibold text-slate-900">{linkedMem?.name || 'Membre ID: ' + c.member_id}</div>
+                                <div className="text-[11px] text-slate-400">{linkedMem?.role || ''}</div>
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="font-semibold text-slate-800">{c.title}</div>
+                                <div className="text-[11px] text-slate-500">
+                                  {c.category} {c.jurisdiction ? `• ${c.jurisdiction}` : ''}
+                                </div>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className="inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5 rounded-full border bg-slate-50 text-slate-700 border-slate-200">
+                                  {c.status === 'renvoyee' ? '⚠️ Renvoyée' : c.status}
+                                </span>
+                                {c.hearing_date && (
+                                  <div className="text-[10px] text-amber-800 font-semibold mt-0.5">
+                                    Audience le : {new Date(c.hearing_date).toLocaleDateString('fr-FR')}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-right whitespace-nowrap">
+                                <button
+                                  onClick={() => {
+                                    setActiveMemberForCases(linkedMem || null);
+                                    setActiveAppForCases(applications.find((a: any) => a.member_id === c.member_id) || null);
+                                    setMemberCasesModalOpen(true);
+                                  }}
+                                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-lg font-semibold text-[11px] cursor-pointer"
+                                >
+                                  Ouvrir le dossier
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: MEMBERS - ASSOCIATIVE LIFE OVERVIEW & DEDICATED PAGE */}
+          {activeTab === 'members' && memberSubTab === 'associative_life' && (
+            (resolvedAssociativeApp || resolvedAssociativeMem) ? (
+              <MemberAssociativeLifeView
+                application={resolvedAssociativeApp}
+                member={resolvedAssociativeMem}
+                allAssociativeActivities={memberAssociativeActivities}
+                onBack={handleCloseAssociativeLife}
+                requestConfirmation={requestConfirmation}
+              />
+            ) : (
+              <div className="space-y-6 animate-in fade-in">
+                {/* Global Associative Life Overview Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <h2 className="text-xl font-serif font-bold text-slate-900 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-amber-600" />
+                      <span>Vie Associative &amp; Activités des Membres</span>
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Consultez, gérez et suivez les mandats, commissions thématiques, missions pro bono et distinctions de chaque membre adhérent.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4 KPI Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Activités</span>
+                    <span className="text-2xl font-bold text-slate-900 mt-1 block">{memberAssociativeActivities.length}</span>
+                    <span className="text-[11px] text-slate-500">Toutes catégories confondues</span>
+                  </div>
+                  <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl shadow-xs">
+                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">Mandats Actifs</span>
+                    <span className="text-2xl font-bold text-amber-900 mt-1 block">
+                      {memberAssociativeActivities.filter((a: any) => a.type === 'mandat' && a.status === 'actif').length}
+                    </span>
+                    <span className="text-[11px] text-amber-700/80">Fonctions &amp; délégations en cours</span>
+                  </div>
+                  <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-xl shadow-xs">
+                    <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">Commissions</span>
+                    <span className="text-2xl font-bold text-blue-900 mt-1 block">
+                      {memberAssociativeActivities.filter((a: any) => a.type === 'commission').length}
+                    </span>
+                    <span className="text-[11px] text-blue-700/80">Groupes de travail &amp; comités</span>
+                  </div>
+                  <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl shadow-xs">
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Missions &amp; Honneurs</span>
+                    <span className="text-2xl font-bold text-emerald-900 mt-1 block">
+                      {memberAssociativeActivities.filter((a: any) => a.type === 'mission' || a.type === 'distinction').length}
+                    </span>
+                    <span className="text-[11px] text-emerald-700/80">Assistance &amp; distinctions</span>
+                  </div>
+                </div>
+
+                {/* Members Quick Access Grid */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Sélectionnez un membre pour ouvrir sa page dédiée :</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {members.map((mem: any) => {
+                      const linkedApp = applications.find((a: any) => a.member_id === mem.id);
+                      const count = memberAssociativeActivities.filter((act: any) => act.member_id === mem.id || (linkedApp && act.membership_application_id === linkedApp.id)).length;
+                      return (
+                        <div
+                          key={mem.id}
+                          onClick={() => handleOpenAssociativeLifeFromMember(mem)}
+                          className="p-4 bg-slate-50/80 hover:bg-white border border-slate-200 hover:border-amber-400 rounded-xl cursor-pointer transition-all hover:shadow-md group flex items-start gap-3"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 font-bold flex items-center justify-center border border-amber-300 shrink-0 text-sm overflow-hidden">
+                            {mem.avatar_url ? (
+                              <img src={mem.avatar_url} alt={mem.name} className="w-full h-full object-cover" />
+                            ) : (
+                              mem.name?.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-sm text-slate-900 group-hover:text-amber-700 transition-colors truncate">
+                              {mem.name}
+                            </h4>
+                            <p className="text-xs text-slate-500 truncate">{mem.role || 'Membre Adhérent'}</p>
+                            <div className="flex items-center justify-between gap-2 mt-2">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                                {count} activité{count > 1 ? 's' : ''}
+                              </span>
+                              <span className="text-[10px] font-semibold text-amber-600 group-hover:underline flex items-center gap-1">
+                                <span>Page dédiée</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* All Associative Activities Registry Table */}
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden space-y-4 p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span>Registre National des Activités Associatives ({memberAssociativeActivities.length})</span>
+                    </h3>
+                  </div>
+
+                  {memberAssociativeActivities.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <Sparkles className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-xs font-medium">Aucune activité associative enregistrée pour l'instant.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Sélectionnez un membre ci-dessus pour ouvrir sa page dédiée et ajouter ses mandats, commissions ou distinctions.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-500 font-semibold border-y border-slate-200 uppercase tracking-wider text-[10px]">
+                          <tr>
+                            <th className="py-2.5 px-3">Membre Adhérent</th>
+                            <th className="py-2.5 px-3">Type</th>
+                            <th className="py-2.5 px-3">Intitulé &amp; Fonction</th>
+                            <th className="py-2.5 px-3">Commission / Unité</th>
+                            <th className="py-2.5 px-3">Période</th>
+                            <th className="py-2.5 px-3">Statut</th>
+                            <th className="py-2.5 px-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {memberAssociativeActivities.map((act: any) => {
+                            const mem = members.find((m: any) => m.id === act.member_id) || act.member;
+                            const app = applications.find((a: any) => a.id === act.membership_application_id) || act.application;
+                            const memberName = mem?.name || (app ? `${app.first_name || ''} ${app.last_name || ''}`.trim() : 'Membre');
+                            const memberRole = mem?.role || app?.profession || 'Membre';
+
+                            return (
+                              <tr key={act.id} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="py-3 px-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-[10px] shrink-0 overflow-hidden">
+                                      {mem?.avatar_url || app?.avatar_url ? (
+                                        <img src={mem?.avatar_url || app?.avatar_url} alt={memberName} className="w-full h-full object-cover" />
+                                      ) : (
+                                        memberName.charAt(0).toUpperCase()
+                                      )}
+                                    </div>
+                                    <div>
+                                      <span className="font-bold text-slate-900 block truncate max-w-[150px]">{memberName}</span>
+                                      <span className="text-[10px] text-slate-400 block truncate max-w-[150px]">{memberRole}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 capitalize">
+                                    {act.type}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 font-medium text-slate-900">
+                                  <span className="font-semibold">{act.title}</span>
+                                  {act.role && <span className="block text-[11px] text-slate-500">{act.role}</span>}
+                                </td>
+                                <td className="py-3 px-3 text-slate-600">
+                                  {act.organization_unit || '—'}
+                                </td>
+                                <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
+                                  {act.start_date ? new Date(act.start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : '—'}
+                                  {act.is_current ? ' → Présent' : (act.end_date ? ` → ${new Date(act.end_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}` : '')}
+                                </td>
+                                <td className="py-3 px-3">
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    act.status === 'actif' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                    act.status === 'honoraire' ? 'bg-amber-50 text-amber-900 border-amber-300' :
+                                    'bg-slate-100 text-slate-600 border-slate-200'
+                                  }`}>
+                                    {act.status === 'actif' ? 'Actif' : act.status === 'honoraire' ? 'Honoraire' : 'Terminé'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (mem) handleOpenAssociativeLifeFromMember(mem);
+                                      else if (app) handleOpenAssociativeLifeFromApp(app);
+                                    }}
+                                    className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-lg font-semibold text-[11px] cursor-pointer inline-flex items-center gap-1"
+                                  >
+                                    <Sparkles className="w-3 h-3 text-amber-600" />
+                                    <span>Page dédiée</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
           )}
           
           {activeTab === 'members' && memberSubTab === 'tiers' && (
@@ -1219,6 +1842,13 @@ export default function Dashboard({
               membershipTiersState={membershipTiersState}
               setMembershipTiersState={setMembershipTiersState}
               handleSaveMembershipTiers={handleSaveMembershipTiers}
+            />
+          )}
+
+          {activeTab === 'members' && memberSubTab === 'payment_accounts' && (
+            <PaymentAccountsManager
+              accounts={paymentAccounts}
+              requestConfirmation={requestConfirmation}
             />
           )}
 
@@ -1365,6 +1995,28 @@ export default function Dashboard({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Member Cases & Fiche du Membre Modal */}
+      {memberCasesModalOpen && (
+        <MemberCasesModal
+          isOpen={memberCasesModalOpen}
+          onClose={() => setMemberCasesModalOpen(false)}
+          member={activeMemberForCases}
+          application={activeAppForCases}
+          allCases={memberCases}
+        />
+      )}
+
+      {/* Member Affectation & Agrément Modal */}
+      {memberAffectationModalOpen && (
+        <MemberAffectationModal
+          isOpen={memberAffectationModalOpen}
+          onClose={() => setMemberAffectationModalOpen(false)}
+          member={activeMemberForAffectation}
+          application={activeAppForAffectation}
+          categoriesList={categoriesList}
+        />
       )}
     </div>
   );

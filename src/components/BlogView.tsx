@@ -13,13 +13,78 @@ const CATEGORY_MAP: Record<string, { fr: string; en: string }> = {
 };
 
 const COLOR_PALETTES = [
-  { bg: 'bg-amber-50/50', border: 'border-amber-200', text: 'text-amber-700', hoverBorder: 'group-hover:border-amber-400', tag: 'bg-amber-100/50 text-amber-800', hoverText: 'group-hover:text-amber-700' },
-  { bg: 'bg-blue-50/50', border: 'border-blue-200', text: 'text-blue-700', hoverBorder: 'group-hover:border-blue-400', tag: 'bg-blue-100/50 text-blue-800', hoverText: 'group-hover:text-blue-700' },
-  { bg: 'bg-emerald-50/50', border: 'border-emerald-200', text: 'text-emerald-700', hoverBorder: 'group-hover:border-emerald-400', tag: 'bg-emerald-100/50 text-emerald-800', hoverText: 'group-hover:text-emerald-700' },
-  { bg: 'bg-fuchsia-50/50', border: 'border-fuchsia-200', text: 'text-fuchsia-700', hoverBorder: 'group-hover:border-fuchsia-400', tag: 'bg-fuchsia-100/50 text-fuchsia-800', hoverText: 'group-hover:text-fuchsia-700' },
-  { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', hoverBorder: 'group-hover:border-slate-400', tag: 'bg-slate-100/70 text-slate-800', hoverText: 'group-hover:text-slate-700' },
-  { bg: 'bg-rose-50/50', border: 'border-rose-200', text: 'text-rose-700', hoverBorder: 'group-hover:border-rose-400', tag: 'bg-rose-100/50 text-rose-800', hoverText: 'group-hover:text-rose-700' },
-  { bg: 'bg-indigo-50/50', border: 'border-indigo-200', text: 'text-indigo-700', hoverBorder: 'group-hover:border-indigo-400', tag: 'bg-indigo-100/50 text-indigo-800', hoverText: 'group-hover:text-indigo-700' },
+  // 0: Doctrine (Or / Ambre vif)
+  {
+    bg: 'bg-gradient-to-br from-amber-200 via-amber-100 to-yellow-200',
+    border: 'border-amber-300',
+    text: 'text-amber-900',
+    hoverBorder: 'group-hover:border-amber-500',
+    tag: 'bg-white/90 text-amber-950 border border-amber-300 shadow-2xs',
+    hoverText: 'group-hover:text-amber-950',
+  },
+  // 1: Jurisprudence (Bleu azur vif)
+  {
+    bg: 'bg-gradient-to-br from-blue-200 via-sky-100 to-blue-200',
+    border: 'border-blue-300',
+    text: 'text-blue-900',
+    hoverBorder: 'group-hover:border-blue-500',
+    tag: 'bg-white/90 text-blue-950 border border-blue-300 shadow-2xs',
+    hoverText: 'group-hover:text-blue-950',
+  },
+  // 2: Libertés Fondamentales (Émeraude / Jade vif)
+  {
+    bg: 'bg-gradient-to-br from-emerald-200 via-teal-100 to-emerald-200',
+    border: 'border-emerald-300',
+    text: 'text-emerald-900',
+    hoverBorder: 'group-hover:border-emerald-500',
+    tag: 'bg-white/90 text-emerald-950 border border-emerald-300 shadow-2xs',
+    hoverText: 'group-hover:text-emerald-950',
+  },
+  // 3: Droit & Numérique (Pourpre / Fuchsia vif)
+  {
+    bg: 'bg-gradient-to-br from-fuchsia-200 via-purple-100 to-pink-200',
+    border: 'border-fuchsia-300',
+    text: 'text-fuchsia-900',
+    hoverBorder: 'group-hover:border-fuchsia-500',
+    tag: 'bg-white/90 text-fuchsia-950 border border-fuchsia-300 shadow-2xs',
+    hoverText: 'group-hover:text-fuchsia-950',
+  },
+  // 4: Actualités Institutionnelles (Mandarine / Corail vif)
+  {
+    bg: 'bg-gradient-to-br from-orange-200 via-rose-100 to-amber-200',
+    border: 'border-orange-300',
+    text: 'text-orange-950',
+    hoverBorder: 'group-hover:border-orange-500',
+    tag: 'bg-white/90 text-orange-950 border border-orange-300 shadow-2xs',
+    hoverText: 'group-hover:text-orange-950',
+  },
+  // 5: Rose vif
+  {
+    bg: 'bg-gradient-to-br from-rose-200 via-pink-100 to-rose-200',
+    border: 'border-rose-300',
+    text: 'text-rose-900',
+    hoverBorder: 'group-hover:border-rose-500',
+    tag: 'bg-white/90 text-rose-950 border border-rose-300 shadow-2xs',
+    hoverText: 'group-hover:text-rose-950',
+  },
+  // 6: Indigo / Violet royal vif
+  {
+    bg: 'bg-gradient-to-br from-indigo-200 via-sky-100 to-violet-200',
+    border: 'border-indigo-300',
+    text: 'text-indigo-900',
+    hoverBorder: 'group-hover:border-indigo-500',
+    tag: 'bg-white/90 text-indigo-950 border border-indigo-300 shadow-2xs',
+    hoverText: 'group-hover:text-indigo-950',
+  },
+  // 7: Cyan / Turquoise vif
+  {
+    bg: 'bg-gradient-to-br from-cyan-200 via-teal-100 to-cyan-200',
+    border: 'border-cyan-300',
+    text: 'text-cyan-900',
+    hoverBorder: 'group-hover:border-cyan-500',
+    tag: 'bg-white/90 text-cyan-950 border border-cyan-300 shadow-2xs',
+    hoverText: 'group-hover:text-cyan-950',
+  },
 ];
 
 const getCategoryPalette = (categoryName: string) => {
@@ -242,22 +307,22 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [], articleCatego
               <article
                 key={article.id}
                 onClick={() => setActiveArticle(article)}
-                className={`rounded-xl border p-8 ambient-shadow-hover flex flex-col justify-between cursor-pointer group transition-all duration-300 ${palette.bg} ${palette.border} hover:shadow-md ${palette.hoverBorder}`}
+                className={`rounded-2xl border-2 p-8 flex flex-col justify-between cursor-pointer group transition-all duration-300 shadow-xs hover:shadow-xl hover:-translate-y-1.5 ${palette.bg} ${palette.border} ${palette.hoverBorder}`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <span className={`text-[10px] font-bold uppercase tracking-wider ${palette.text}`}>
                       {aData.category}
                     </span>
-                    <div className="flex items-center gap-3 text-xs text-[#75777e]">
+                    <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
+                        <Clock className="w-3.5 h-3.5 text-slate-600" />
                         {aData.readTime}
                       </span>
                       <button
                         onClick={(e) => toggleBookmark(article.id, e)}
-                        className={`p-1 hover:text-[#C5A059] transition-colors ${
-                          isBookmarked ? 'text-[#C5A059]' : 'text-slate-400'
+                        className={`p-1 hover:text-[#C5A059] transition-colors cursor-pointer ${
+                          isBookmarked ? 'text-[#C5A059]' : 'text-slate-500'
                         }`}
                         title={isEn ? 'Save article' : 'Sauvegarder l\'article'}
                       >
@@ -270,7 +335,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [], articleCatego
                     {aData.title}
                   </h3>
 
-                  <p className="text-sm text-slate-700 leading-relaxed mb-6 line-clamp-3">
+                  <p className="text-sm text-slate-800 leading-relaxed mb-6 line-clamp-3">
                     {aData.summary}
                   </p>
 
@@ -278,7 +343,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [], articleCatego
                     {aData.tags.map((tag, i) => (
                       <span
                         key={i}
-                        className={`text-[10px] font-semibold px-2 py-1 rounded-md ${palette.tag}`}
+                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-md ${palette.tag}`}
                       >
                         #{tag}
                       </span>
@@ -286,7 +351,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [], articleCatego
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-black/5 flex items-center justify-between">
+                <div className="pt-4 border-t border-black/10 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <img
                       src={article.author?.avatar || '/placeholder-avatar.jpg'}
@@ -297,12 +362,12 @@ export const BlogView: React.FC<BlogViewProps> = ({ articles = [], articleCatego
                       <div className="text-xs font-bold text-[#031632]">
                         {article.author?.name || 'Auteur inconnu'}
                       </div>
-                      <div className="text-[11px] text-[#75777e]">
+                      <div className="text-[11px] text-slate-700 font-medium">
                         {aData.publishDate}
                       </div>
                     </div>
                   </div>
-                  <span className={`text-xs font-semibold group-hover:translate-x-1 transition-transform flex items-center gap-1 ${palette.text}`}>
+                  <span className={`text-xs font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1 ${palette.text}`}>
                     {isEn ? 'Read article' : 'Lire la tribune'} <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>

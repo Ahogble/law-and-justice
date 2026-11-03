@@ -24,10 +24,10 @@ class LegalText extends Model
         'summary',
         'full_text',
         'pdf_url',
-        'sections'
+        'sections',
     ];
 
     protected $casts = [
-        'sections' => 'array'
+        'sections' => 'array',
     ];
 }

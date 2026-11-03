@@ -5,10 +5,23 @@ export interface AdhesionPdfData {
   civility: string;
   firstName: string;
   lastName: string;
+  birthDate?: string;
+  birthPlace?: string;
+  maritalStatus?: string;
+  address?: string;
+  country?: string;
+  region?: string;
+  department?: string;
+  locality?: string;
   profession: string;
   institution?: string;
-  email: string;
+  cni?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  email?: string;
   phone?: string;
+  whatsapp?: string;
+  secondaryPhone?: string;
   tierName: string;
   tierPrice: number;
   issueDate?: string;
@@ -108,33 +121,41 @@ export function generateAdhesionPdfBlobUrl(data: AdhesionPdfData): string {
   if (data.institution) {
     doc.text(`Rattachement : ${data.institution}`, margin + 6, 121);
   }
-  doc.text(`Adresse de contact : ${data.email}`, margin + 6, 127);
-  if (data.phone) {
-    doc.text(`Telephone : ${data.phone}`, margin + 6, 133);
+  if (data.cni) {
+    doc.text(`N° CNI / Identite : ${data.cni}`, margin + 6, data.institution ? 127 : 121);
+  }
+  doc.text(`Adresse de contact : ${data.email || 'Non renseignee'}`, margin + 6, data.cni ? 133 : (data.institution ? 127 : 121));
+  const phonesList: string[] = [];
+  if (data.phone) phonesList.push(`Tel : ${data.phone}`);
+  if (data.whatsapp) phonesList.push(`WhatsApp : ${data.whatsapp}`);
+  if (data.secondaryPhone) phonesList.push(`Tel 2 : ${data.secondaryPhone}`);
+  if (phonesList.length > 0) {
+    doc.text(phonesList.join(' | '), margin + 6, data.cni ? 139 : (data.institution ? 133 : 127));
   }
 
   // Membership & Fiscal Section
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(197, 160, 89);
-  doc.text('II. QUALITE DE MEMBRE & COTISATION', margin + 6, 145);
-  doc.line(margin + 6, 147, margin + 72, 147);
+  doc.text('II. QUALITE DE MEMBRE & COTISATION', margin + 6, 147);
+  doc.line(margin + 6, 149, margin + 72, 149);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(40, 40, 40);
 
-  const certText1 = `Le Secretariat General et le Conseil d'Administration de l'Association Droit & Justice attestent que la personne susnommee a ete valablement agrementee au sein du :`;
+  const certText1 = `Le Secretariat General et le Conseil d'Administration de l'Association Droit & Justice attestent que la personne susnommee a ete valablement enregistree au sein du :`;
   const splitText1 = doc.splitTextToSize(certText1, contentWidth - 12);
-  doc.text(splitText1, margin + 6, 155);
+  doc.text(splitText1, margin + 6, 156);
 
   // Badge tier box
   doc.setFillColor(3, 22, 50);
-  doc.roundedRect(margin + 6, 164, contentWidth - 12, 14, 2, 2, 'F');
+  doc.roundedRect(margin + 6, 163, contentWidth - 12, 15, 2, 2, 'F');
   doc.setFont('times', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.setTextColor(255, 255, 255);
-  doc.text(`${data.tierName.toUpperCase()} — Montant acquitte : ${data.tierPrice} EUR TTC`, margin + 12, 173);
+  const paymentText = data.paymentReference ? ` — Versement : ${data.paymentMethod || 'Ref.'} (${data.paymentReference})` : '';
+  doc.text(`${data.tierName.toUpperCase()} — Cotisation : ${data.tierPrice.toLocaleString('fr-FR')} FCFA${paymentText}`, margin + 10, 172.5);
 
   // Legal & Tax information
   doc.setFont('helvetica', 'italic');
@@ -277,9 +298,13 @@ export function downloadAdhesionPdf(data: AdhesionPdfData, filename?: string) {
   if (data.institution) {
     doc.text(`Rattachement : ${data.institution}`, margin + 6, 121);
   }
-  doc.text(`Adresse de contact : ${data.email}`, margin + 6, 127);
-  if (data.phone) {
-    doc.text(`Telephone : ${data.phone}`, margin + 6, 133);
+  doc.text(`Adresse de contact : ${data.email || 'Non renseignée'}`, margin + 6, 127);
+  const phonesListDownload: string[] = [];
+  if (data.phone) phonesListDownload.push(`Tél : ${data.phone}`);
+  if (data.whatsapp) phonesListDownload.push(`WhatsApp : ${data.whatsapp}`);
+  if (data.secondaryPhone) phonesListDownload.push(`Tél 2 : ${data.secondaryPhone}`);
+  if (phonesListDownload.length > 0) {
+    doc.text(phonesListDownload.join(' | '), margin + 6, 133);
   }
 
   doc.setFont('helvetica', 'bold');

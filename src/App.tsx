@@ -301,6 +301,7 @@ function MainAppContent(props: any) {
         isOpen={joinModalOpen}
         onClose={() => setJoinModalOpen(false)}
         membershipTiers={props.siteSettings?.membership_tiers}
+        paymentAccounts={props.siteSettings?.payment_accounts}
       />
 
       <SearchModal

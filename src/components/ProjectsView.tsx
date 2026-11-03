@@ -21,7 +21,8 @@ import {
   Clock,
   Briefcase,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import { DisputeCategory, DisputeStage, DisputeOfficer, DisputeCase, DisputeStageConfig } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -89,6 +90,113 @@ const EXTERNAL_DISPUTE_TEXT = {
     { label: "Règlement amiable externe", value: "60%" },
     { label: "Conseils extérieurs associés", value: "12 avocats" }
   ]
+};
+
+const OFFICER_PALETTES = [
+  // 0: Or / Ambre vif
+  {
+    bg: 'bg-gradient-to-br from-amber-200 via-amber-100 to-yellow-200',
+    border: 'border-amber-300',
+    hoverBorder: 'hover:border-amber-500',
+    text: 'text-amber-950',
+    badge: 'bg-white/90 text-amber-950 border-amber-300',
+    statBg: 'bg-white/85 border-amber-200/90',
+    tag: 'bg-white/90 text-amber-950 border border-amber-300 shadow-2xs font-semibold',
+  },
+  // 1: Bleu azur vif
+  {
+    bg: 'bg-gradient-to-br from-blue-200 via-sky-100 to-blue-200',
+    border: 'border-blue-300',
+    hoverBorder: 'hover:border-blue-500',
+    text: 'text-blue-950',
+    badge: 'bg-white/90 text-blue-950 border-blue-300',
+    statBg: 'bg-white/85 border-blue-200/90',
+    tag: 'bg-white/90 text-blue-950 border border-blue-300 shadow-2xs font-semibold',
+  },
+  // 2: Émeraude / Jade vif
+  {
+    bg: 'bg-gradient-to-br from-emerald-200 via-teal-100 to-emerald-200',
+    border: 'border-emerald-300',
+    hoverBorder: 'hover:border-emerald-500',
+    text: 'text-emerald-950',
+    badge: 'bg-white/90 text-emerald-950 border-emerald-300',
+    statBg: 'bg-white/85 border-emerald-200/90',
+    tag: 'bg-white/90 text-emerald-950 border border-emerald-300 shadow-2xs font-semibold',
+  },
+  // 3: Pourpre / Fuchsia vif
+  {
+    bg: 'bg-gradient-to-br from-fuchsia-200 via-purple-100 to-pink-200',
+    border: 'border-fuchsia-300',
+    hoverBorder: 'hover:border-fuchsia-500',
+    text: 'text-fuchsia-950',
+    badge: 'bg-white/90 text-fuchsia-950 border-fuchsia-300',
+    statBg: 'bg-white/85 border-fuchsia-200/90',
+    tag: 'bg-white/90 text-fuchsia-950 border border-fuchsia-300 shadow-2xs font-semibold',
+  },
+  // 4: Mandarine / Corail vif
+  {
+    bg: 'bg-gradient-to-br from-orange-200 via-rose-100 to-amber-200',
+    border: 'border-orange-300',
+    hoverBorder: 'hover:border-orange-500',
+    text: 'text-orange-950',
+    badge: 'bg-white/90 text-orange-950 border-orange-300',
+    statBg: 'bg-white/85 border-orange-200/90',
+    tag: 'bg-white/90 text-orange-950 border border-orange-300 shadow-2xs font-semibold',
+  },
+  // 5: Rose vif
+  {
+    bg: 'bg-gradient-to-br from-rose-200 via-pink-100 to-rose-200',
+    border: 'border-rose-300',
+    hoverBorder: 'hover:border-rose-500',
+    text: 'text-rose-950',
+    badge: 'bg-white/90 text-rose-950 border-rose-300',
+    statBg: 'bg-white/85 border-rose-200/90',
+    tag: 'bg-white/90 text-rose-950 border border-rose-300 shadow-2xs font-semibold',
+  },
+  // 6: Indigo / Violet royal vif
+  {
+    bg: 'bg-gradient-to-br from-indigo-200 via-sky-100 to-violet-200',
+    border: 'border-indigo-300',
+    hoverBorder: 'hover:border-indigo-500',
+    text: 'text-indigo-950',
+    badge: 'bg-white/90 text-indigo-950 border-indigo-300',
+    statBg: 'bg-white/85 border-indigo-200/90',
+    tag: 'bg-white/90 text-indigo-950 border border-indigo-300 shadow-2xs font-semibold',
+  },
+  // 7: Cyan / Turquoise vif
+  {
+    bg: 'bg-gradient-to-br from-cyan-200 via-teal-100 to-cyan-200',
+    border: 'border-cyan-300',
+    hoverBorder: 'hover:border-cyan-500',
+    text: 'text-cyan-950',
+    badge: 'bg-white/90 text-cyan-950 border border-cyan-300 shadow-2xs',
+    statBg: 'bg-white/85 border-cyan-200/90',
+    tag: 'bg-white/90 text-cyan-950 border border-cyan-300 shadow-2xs font-semibold',
+  },
+];
+
+const getOfficerPalette = (officer: DisputeOfficer, index: number) => {
+  if (officer.id) {
+    let hash = 0;
+    const str = `${officer.id}-${officer.name || ''}`;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return OFFICER_PALETTES[Math.abs(hash) % OFFICER_PALETTES.length];
+  }
+  return OFFICER_PALETTES[index % OFFICER_PALETTES.length];
+};
+
+const getCasePalette = (dispute: DisputeCase, index: number) => {
+  if (dispute.id || dispute.caseNumber) {
+    let hash = 0;
+    const str = `${dispute.id || ''}-${dispute.caseNumber || ''}-${dispute.title || ''}`;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return OFFICER_PALETTES[Math.abs(hash) % OFFICER_PALETTES.length];
+  }
+  return OFFICER_PALETTES[index % OFFICER_PALETTES.length];
 };
 
 interface ProjectsViewProps {
@@ -275,15 +383,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const getStatusBadge = (status: DisputeCase['status']) => {
     switch (status) {
       case 'Accord Homologué':
-        return <span className="bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {status}</span>;
+        return <span className="bg-white/90 text-emerald-950 border border-emerald-300 shadow-2xs text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-700" /> {status}</span>;
       case 'Sentence Arbitrale':
-        return <span className="bg-indigo-500/10 text-indigo-700 border border-indigo-500/30 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><Gavel className="w-3 h-3" /> {status}</span>;
+        return <span className="bg-white/90 text-indigo-950 border border-indigo-300 shadow-2xs text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><Gavel className="w-3 h-3 text-indigo-700" /> {status}</span>;
       case 'En cours':
-        return <span className="bg-amber-500/10 text-amber-700 border border-amber-500/30 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><Clock className="w-3 h-3" /> {status}</span>;
+        return <span className="bg-white/90 text-amber-950 border border-amber-300 shadow-2xs text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><Clock className="w-3 h-3 text-amber-700" /> {status}</span>;
       case 'En instruction':
-        return <span className="bg-blue-500/10 text-blue-700 border border-blue-500/30 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><Briefcase className="w-3 h-3" /> {status}</span>;
+        return <span className="bg-white/90 text-blue-950 border border-blue-300 shadow-2xs text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><Briefcase className="w-3 h-3 text-blue-700" /> {status}</span>;
       case 'Clôturé':
-        return <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold px-2.5 py-1 rounded-full">{status}</span>;
+        return <span className="bg-white/90 text-slate-900 border border-slate-300 shadow-2xs text-[11px] font-bold px-2.5 py-1 rounded-full">{status}</span>;
     }
   };
 
@@ -534,70 +642,88 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {currentOfficers.map((officer) => (
-              <div
-                key={officer.id}
-                className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start gap-4 mb-4">
-                    <img
-                      src={officer.avatarUrl}
-                      alt={officer.name}
-                      className="w-16 h-16 rounded-xl object-cover border-2 border-[#C5A059]/40 shadow-sm shrink-0"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#C5A059]/10 text-[#C5A059] px-2 py-0.5 rounded border border-[#C5A059]/20">
-                          {officer.title}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          officer.availability === 'Disponible' 
-                            ? 'bg-emerald-100 text-emerald-800' 
-                            : officer.availability === 'En audience'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {officer.availability}
-                        </span>
+            {currentOfficers.map((officer, index) => {
+              const palette = getOfficerPalette(officer, index);
+              return (
+                <div
+                  key={officer.id}
+                  className={`rounded-2xl border-2 p-6 flex flex-col justify-between shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 ${palette.bg} ${palette.border} ${palette.hoverBorder}`}
+                >
+                  <div>
+                    <div className="flex items-start gap-4 mb-4">
+                      {officer.avatarUrl ? (
+                        <img
+                          src={officer.avatarUrl}
+                          alt={officer.name}
+                          className="w-16 h-16 rounded-xl object-cover border-2 border-white shadow-sm shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                            const sibling = (e.target as HTMLElement).nextElementSibling;
+                            if (sibling) (sibling as HTMLElement).style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`w-16 h-16 rounded-xl border-2 border-white shadow-sm flex items-center justify-center font-bold text-sm bg-gradient-to-br from-[#031632] to-[#1A2B48] text-[#C5A059] shrink-0 ${
+                          officer.avatarUrl ? 'hidden' : 'flex'
+                        }`}
+                      >
+                        {officer.name.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
                       </div>
-                      <h3 className="font-playfair text-xl font-bold text-[#031632] mt-1">{officer.name}</h3>
-                      <p className="text-xs text-slate-500 font-medium">{officer.role}</p>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shadow-2xs ${palette.badge}`}>
+                            {officer.title}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${
+                            officer.availability === 'Disponible' 
+                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300' 
+                              : officer.availability === 'En audience'
+                              ? 'bg-rose-100 text-rose-900 border-rose-300'
+                              : 'bg-amber-100 text-amber-900 border-amber-300'
+                          }`}>
+                            {officer.availability}
+                          </span>
+                        </div>
+                        <h3 className="font-playfair text-xl font-bold text-[#031632] mt-1.5 truncate">{officer.name}</h3>
+                        <p className="text-xs text-slate-800 font-semibold mt-0.5 truncate">{officer.role}</p>
+                      </div>
+                    </div>
+
+                    <div className={`space-y-2 text-xs ${palette.statBg} p-3 rounded-xl border mb-4 shadow-2xs`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-700 font-medium">{isEn ? 'Experience:' : 'Expérience :'}</span>
+                        <span className="font-bold text-[#031632]">{officer.experienceYears} {isEn ? 'years practice' : 'ans de pratique'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-700 font-medium">{isEn ? 'Cases handled:' : 'Dossiers traités :'}</span>
+                        <span className="font-bold text-[#031632]">{officer.casesHandled} {isEn ? 'cases' : 'affaires'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {officer.specialties.map((spec, i) => (
+                        <span key={i} className={`text-[11px] px-2.5 py-1 rounded-md font-semibold ${palette.tag}`}>
+                          {spec}
+                        </span>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400 font-medium">Expérience :</span>
-                      <span className="font-bold text-[#031632]">{officer.experienceYears} ans de pratique</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400 font-medium">Dossiers traités :</span>
-                      <span className="font-bold text-[#031632]">{officer.casesHandled} affaires</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {officer.specialties.map((spec, i) => (
-                      <span key={i} className="text-[11px] bg-slate-100 text-slate-700 px-2.5 py-1 rounded font-medium">
-                        {spec}
-                      </span>
-                    ))}
+                  <div className="pt-4 border-t border-black/10 flex items-center justify-between gap-3">
+                    <span className="text-xs text-slate-700 font-medium truncate">{officer.email}</span>
+                    <button
+                      onClick={() => setSelectedOfficer(officer)}
+                      className="bg-[#031632] hover:bg-[#1A2B48] text-white text-xs font-bold px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer shrink-0 flex items-center gap-1.5 shadow-sm hover:shadow-md hover:translate-x-0.5"
+                    >
+                      <span>{isEn ? 'Select this official' : 'Saisir cet officiel'}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <span className="text-xs text-slate-400 truncate">{officer.email}</span>
-                  <button
-                    onClick={() => setSelectedOfficer(officer)}
-                    className="bg-[#031632] hover:bg-[#1A2B48] text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
-                  >
-                    <span>Saisir cet officiel</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -673,98 +799,85 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {currentCases.map((dispute) => (
-                <div
-                  key={dispute.id}
-                  onClick={() => setSelectedCase(dispute)}
-                  className={`rounded-2xl border p-6 shadow-sm transition-all cursor-pointer flex flex-col justify-between group ${
-                    dispute.isPublic
-                      ? 'bg-white border-slate-200 hover:border-[#C5A059]'
-                      : 'bg-slate-950 text-white border-slate-800 hover:border-amber-500/50'
-                  }`}
-                >
-                  <div>
-                    {/* Header line: Case Number + Public/Confidential Badge */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded ${
-                          dispute.isPublic ? 'bg-slate-100 text-slate-700' : 'bg-slate-800 text-slate-300'
-                        }`}>
-                          {dispute.caseNumber}
-                        </span>
+              {currentCases.map((dispute, index) => {
+                const palette = getCasePalette(dispute, index);
+                return (
+                  <div
+                    key={dispute.id}
+                    onClick={() => setSelectedCase(dispute)}
+                    className={`rounded-2xl border-2 p-6 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between group ${palette.bg} ${palette.border} ${palette.hoverBorder}`}
+                  >
+                    <div>
+                      {/* Header line: Case Number + Public/Confidential Badge */}
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded shadow-2xs ${palette.badge}`}>
+                            {dispute.caseNumber}
+                          </span>
 
-                        {dispute.isPublic ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded">
-                            <Unlock className="w-3 h-3" />
-                            Publique
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded">
-                            <Lock className="w-3 h-3 text-amber-400" />
-                            Non Publique (Confidentielle)
-                          </span>
-                        )}
+                          {dispute.isPublic ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-white/90 text-emerald-950 border border-emerald-300 shadow-2xs px-2 py-0.5 rounded">
+                              <Unlock className="w-3 h-3 text-emerald-700" />
+                              {isEn ? 'Public' : 'Publique'}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-amber-300 border border-slate-800 shadow-2xs px-2 py-0.5 rounded">
+                              <Lock className="w-3 h-3 text-amber-400" />
+                              {isEn ? 'Confidential' : 'Non Publique (Confidentielle)'}
+                            </span>
+                          )}
+                        </div>
+
+                        {getStatusBadge(dispute.status)}
                       </div>
 
-                      {getStatusBadge(dispute.status)}
-                    </div>
+                      {/* Title */}
+                      <h3 className="font-playfair text-xl font-bold text-[#031632] mb-3 transition-colors group-hover:text-[#C5A059]">
+                        {dispute.title}
+                      </h3>
 
-                    {/* Title */}
-                    <h3 className={`font-playfair text-xl font-bold mb-3 transition-colors ${
-                      dispute.isPublic 
-                        ? 'text-[#031632] group-hover:text-[#C5A059]' 
-                        : 'text-slate-100 group-hover:text-amber-400'
-                    }`}>
-                      {dispute.title}
-                    </h3>
-
-                    {/* Summary (Blur if non public) */}
-                    {dispute.isPublic ? (
-                      <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                        {dispute.summary}
-                      </p>
-                    ) : (
-                      <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl mb-4 relative overflow-hidden">
-                        <p className="text-xs text-slate-400 blur-[2.5px] select-none pointer-events-none">
+                      {/* Summary (Blur if non public) */}
+                      {dispute.isPublic ? (
+                        <p className="text-xs text-slate-800 font-normal leading-relaxed mb-4 line-clamp-3">
                           {dispute.summary}
                         </p>
-                        <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 text-center">
-                          <span className="text-[11px] text-amber-400 font-semibold flex items-center gap-1.5">
-                            <Lock className="w-3.5 h-3.5 shrink-0" />
-                            Contenu réservé aux parties habilitées
-                          </span>
+                      ) : (
+                        <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl mb-4 relative overflow-hidden shadow-xs">
+                          <p className="text-xs text-slate-400 blur-[2.5px] select-none pointer-events-none line-clamp-2">
+                            {dispute.summary || 'Dossier soumis à la stricte confidentialité des procédures arbitrales et de conciliation.'}
+                          </p>
+                          <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 text-center">
+                            <span className="text-[11px] text-amber-300 font-semibold flex items-center gap-1.5">
+                              <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              {isEn ? 'Restricted to authorized parties' : 'Contenu réservé aux parties habilitées'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Parties info */}
+                      <div className={`p-3 rounded-xl border text-xs mb-4 ${palette.statBg} shadow-2xs`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-700 font-medium">{isEn ? 'Concerned parties:' : 'Parties concernées :'}</span>
+                          <span className="font-bold text-[#031632]">{dispute.parties || (isEn ? 'Undisclosed' : 'Non divulguées')}</span>
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    {/* Parties info */}
-                    <div className={`p-3 rounded-xl border text-xs mb-4 ${
-                      dispute.isPublic 
-                        ? 'bg-slate-50 border-slate-100 text-slate-700' 
-                        : 'bg-slate-900 border-slate-800 text-slate-300'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 font-medium">Parties concernées :</span>
-                        <span className="font-semibold">{dispute.parties || 'Non divulguées'}</span>
-                      </div>
+                    {/* Card Footer */}
+                    <div className="pt-3 border-t border-black/10 flex items-center justify-between text-xs text-slate-700 font-medium">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-[#031632]" />
+                        {isEn ? 'Filed on:' : 'Saisi le :'} {dispute.dateSubmitted}
+                      </span>
+
+                      <span className={`font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform ${palette.text}`}>
+                        {isEn ? 'View file' : 'Consulter la fiche'} <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </div>
-
-                  {/* Card Footer */}
-                  <div className={`pt-3 border-t flex items-center justify-between text-xs ${
-                    dispute.isPublic ? 'border-slate-100 text-slate-500' : 'border-slate-800 text-slate-400'
-                  }`}>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-[#C5A059]" />
-                      Saisi le : {dispute.dateSubmitted}
-                    </span>
-
-                    <span className="font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform text-[#C5A059]">
-                      Consulter la fiche <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -892,11 +1005,25 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               </button>
 
               <div className="flex items-center gap-3">
-                <img
-                  src={selectedOfficer.avatarUrl}
-                  alt={selectedOfficer.name}
-                  className="w-12 h-12 rounded-xl object-cover border-2 border-[#C5A059]"
-                />
+                {selectedOfficer.avatarUrl ? (
+                  <img
+                    src={selectedOfficer.avatarUrl}
+                    alt={selectedOfficer.name}
+                    className="w-12 h-12 rounded-xl object-cover border-2 border-[#C5A059] shrink-0"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                      const sibling = (e.target as HTMLElement).nextElementSibling;
+                      if (sibling) (sibling as HTMLElement).style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`w-12 h-12 rounded-xl border-2 border-[#C5A059] flex items-center justify-center font-bold text-xs bg-gradient-to-br from-[#031632] to-[#1A2B48] text-[#C5A059] shrink-0 ${
+                    selectedOfficer.avatarUrl ? 'hidden' : 'flex'
+                  }`}
+                >
+                  {selectedOfficer.name.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#C5A059]">
                     Demande de Saisine / Consultation

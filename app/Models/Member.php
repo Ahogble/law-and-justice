@@ -14,7 +14,9 @@ class Member extends Model
         'id',
         'name',
         'role',
+        'profession',
         'organization',
+        'city',
         'category',
         'subcategory',
         'bio',
@@ -30,4 +32,14 @@ class Member extends Model
         'publication_count' => 'integer',
         'joined_year' => 'integer',
     ];
+
+    public function cases()
+    {
+        return $this->hasMany(MemberCase::class, 'member_id', 'id')->orderBy('created_at', 'desc');
+    }
+
+    public function associativeActivities()
+    {
+        return $this->hasMany(MemberAssociativeActivity::class, 'member_id', 'id')->orderBy('start_date', 'desc');
+    }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, X, Save, Edit, Trash2, FolderTree, Search, Tag } from 'lucide-react';
+import { Plus, X, Save, Edit, Trash2, FolderTree, Search, Tag, Briefcase, Award, UserCheck, Sparkles } from 'lucide-react';
 
 export default function MembersManager({
   memberSubTab,
@@ -23,7 +23,11 @@ export default function MembersManager({
   handleAddSubcategory,
   handleDeleteSubcategory,
   subcatInputs,
-  setSubcatInputs
+  setSubcatInputs,
+  onOpenMemberCases,
+  onOpenMemberAffectation,
+  onOpenMemberProfile,
+  onOpenAssociativeLife
 }: {
   memberSubTab: string;
   members: any[];
@@ -47,6 +51,10 @@ export default function MembersManager({
   handleDeleteSubcategory: (catId: string | number, subId: string | number) => void;
   subcatInputs: any;
   setSubcatInputs: (val: any) => void;
+  onOpenMemberCases?: (member: any) => void;
+  onOpenMemberAffectation?: (member: any) => void;
+  onOpenMemberProfile?: (member: any) => void;
+  onOpenAssociativeLife?: (member: any) => void;
 }) {
   return (
     <>
@@ -188,8 +196,57 @@ export default function MembersManager({
                   <p className="text-xs text-slate-600">{mem.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => { setMemberForm(mem); setIsEditing(true); }} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-slate-200/60 rounded-lg"><Edit className="w-4 h-4" /></button>
-                  <button onClick={() => handleDeleteMember(mem.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                  {onOpenMemberProfile && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenMemberProfile(mem)}
+                      title="Consulter le profil officiel du membre"
+                      className="px-2.5 py-1.5 text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
+                      <span className="hidden sm:inline">Profil</span>
+                    </button>
+                  )}
+                  {onOpenMemberAffectation && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenMemberAffectation(mem)}
+                      title="Affectation statutaire & Profil"
+                      className="px-2.5 py-1.5 text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Award className="w-3.5 h-3.5 text-amber-700" />
+                      <span className="hidden sm:inline">Affectation</span>
+                    </button>
+                  )}
+                  {onOpenMemberCases && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenMemberCases(mem)}
+                      title="Fiche du membre & Gestion des Affaires"
+                      className="px-2.5 py-1.5 text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Briefcase className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="hidden sm:inline">Affaires</span>
+                      {mem.cases && mem.cases.length > 0 && (
+                        <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-full text-[9px] font-bold">
+                          {mem.cases.length}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {onOpenAssociativeLife && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenAssociativeLife(mem)}
+                      title="Consulter et gérer la vie associative du membre"
+                      className="px-2.5 py-1.5 text-amber-900 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      <span className="hidden sm:inline">Vie Assoc.</span>
+                    </button>
+                  )}
+                  <button onClick={() => { setMemberForm(mem); setIsEditing(true); }} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-slate-200/60 rounded-lg cursor-pointer"><Edit className="w-4 h-4" /></button>
+                  <button onClick={() => handleDeleteMember(mem.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
             ))}

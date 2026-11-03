@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\LegalText;
+use Illuminate\Database\Seeder;
 
 class LegalTextSeeder extends Seeder
 {
@@ -32,11 +32,11 @@ class LegalTextSeeder extends Seeder
                                 'title' => 'Dénomination',
                                 'titleEn' => 'Name',
                                 'content' => 'Il est fondé entre les adhérents aux présents statuts une association régie par la loi du 1er juillet 1901...',
-                                'contentEn' => 'An association governed by the French Law of July 1, 1901...'
-                            ]
-                        ]
-                    ]
-                ]
+                                'contentEn' => 'An association governed by the French Law of July 1, 1901...',
+                            ],
+                        ],
+                    ],
+                ],
             ],
             [
                 'id' => 'reglement',
@@ -60,11 +60,11 @@ class LegalTextSeeder extends Seeder
                                 'title' => 'Missions',
                                 'titleEn' => 'Missions',
                                 'content' => 'Les commissions sont chargées de...',
-                                'contentEn' => 'The committees are in charge of...'
-                            ]
-                        ]
-                    ]
-                ]
+                                'contentEn' => 'The committees are in charge of...',
+                            ],
+                        ],
+                    ],
+                ],
             ],
             [
                 'id' => 'charte',
@@ -88,14 +88,14 @@ class LegalTextSeeder extends Seeder
                                 'title' => 'Indépendance Politique',
                                 'titleEn' => 'Political Independence',
                                 'content' => 'L\'association ne saurait soutenir...',
-                                'contentEn' => 'The association shall not support...'
-                            ]
-                        ]
-                    ]
-                ]
-            ]
+                                'contentEn' => 'The association shall not support...',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ];
-        foreach($docs as $doc) {
+        foreach ($docs as $doc) {
             LegalText::updateOrCreate(['id' => $doc['id']], $doc);
         }
     }
