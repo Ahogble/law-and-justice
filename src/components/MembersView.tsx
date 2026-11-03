@@ -437,8 +437,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       <div className="text-xs text-[#75777e]">{isEn ? 'Works & Publications' : 'Travaux & Publications'}</div>
                       <div className="text-sm font-bold text-[#031632]">
                         {isEn
-                          ? `${activeMember.publicationCount || 12} doctrinal papers`
-                          : `${activeMember.publicationCount || 12} articles doctrinaux`}
+                          ? `${selectedMember.publicationCount || 12} doctrinal papers`
+                          : `${selectedMember.publicationCount || 12} articles doctrinaux`}
                       </div>
                     </div>
                   </div>
@@ -447,24 +447,24 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     <div>
                       <div className="text-xs text-[#75777e]">{isEn ? 'Seniority' : 'Ancienneté'}</div>
                       <div className="text-sm font-bold text-[#031632]">
-                        {isEn ? `Since ${activeMember.joinedYear}` : `Depuis ${activeMember.joinedYear}`}
+                        {isEn ? `Since ${selectedMember.joinedYear}` : `Depuis ${selectedMember.joinedYear}`}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {activeMember.email && (
+                {selectedMember.email && (
                   <div className="pt-2 flex items-center justify-between border-t border-slate-200">
                     <div className="text-xs text-[#75777e] flex items-center gap-2">
                       <Mail className="w-4 h-4 text-[#C5A059]" />
-                      <span>{activeMember.email}</span>
+                      <span>{selectedMember.email}</span>
                     </div>
                     <button
                       onClick={() => {
                         alert(
                           isEn
-                            ? `Correspondence message dispatched to secretariat for ${activeMember.name}`
-                            : `Message de correspondance adressé au secrétariat pour ${activeMember.name}`
+                            ? `Correspondence message dispatched to secretariat for ${selectedMember.name}`
+                            : `Message de correspondance adressé au secrétariat pour ${selectedMember.name}`
                         );
                       }}
                       className="text-xs font-semibold text-[#031632] hover:text-[#C5A059] underline cursor-pointer"
@@ -478,7 +478,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
               {/* Modal Footer */}
               <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
                 <button
-                  onClick={() => setActiveMember(null)}
+                  onClick={() => setSelectedMember(null)}
                   className="bg-[#031632] text-white text-xs font-semibold px-6 py-2.5 rounded hover:bg-[#1A2B48] transition-colors cursor-pointer"
                 >
                   {isEn ? 'Close profile' : 'Fermer la fiche'}

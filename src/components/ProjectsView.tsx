@@ -21,7 +21,8 @@ import {
   Clock,
   Briefcase,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import { DisputeCategory, DisputeStage, DisputeOfficer, DisputeCase, DisputeStageConfig } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
